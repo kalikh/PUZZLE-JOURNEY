@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59512c23c6960934e9eaf6c8714c77b3, type: 3}
+  m_Name: desert_18
+  m_EditorClassIdentifier: CaravanSecrets.Levels::CaravanSecrets.Data.Levels.LevelAsset
+  levelId: desert_18
+  regionId: oasis
+  levelNumber: 8
+  recommendedMoves: 18
+  rewardCoins: 46
+  width: 6
+  height: 5
+  cells:
+  - Position: {x: 5, y: 1}
+    Type: 2
+  - Position: {x: 1, y: 4}
+    Type: 2
+  - Position: {x: 5, y: 3}
+    Type: 2
+  - Position: {x: 2, y: 0}
+    Type: 2
+  carts:
+  - Id: main_a
+    Position: {x: 1, y: 1}
+    Direction: 1
+  - Id: key_a
+    Position: {x: 1, y: 0}
+    Direction: 0
+  - Id: main_b
+    Position: {x: 0, y: 3}
+    Direction: 1
+  - Id: key_b
+    Position: {x: 2, y: 4}
+    Direction: 2
+  destinations: []
+  cargo: []
+  cargoDestinations: []
+  objectives:
+  - Id: exit
+    Type: 0
+  - Id: switches
+    Type: 2
+  gates:
+  - Id: gate_a
+    Position: {x: 3, y: 1}
+    InitiallyOpen: 0
+  - Id: gate_b
+    Position: {x: 3, y: 3}
+    InitiallyOpen: 0
+  linkedSwitches:
+  - Id: switch_a
+    Position: {x: 1, y: 2}
+    GateIds:
+    - gate_b
+  - Id: switch_b
+    Position: {x: 2, y: 2}
+    GateIds:
+    - gate_a
+  storageSlots: []
+  directionTiles: []

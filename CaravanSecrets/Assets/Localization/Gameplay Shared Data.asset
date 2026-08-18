@@ -1,0 +1,160 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Gameplay Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Gameplay
+  m_TableCollectionNameGuidString: 2a57e8742b68dd747a3ec53816a24b3b
+  m_Entries:
+  - m_Id: 1267736576
+    m_Key: hud.level
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1326456832
+    m_Key: hud.moves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1330651136
+    m_Key: button.pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1330651137
+    m_Key: button.resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845440
+    m_Key: button.undo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845441
+    m_Key: button.move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845442
+    m_Key: button.restart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845443
+    m_Key: button.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845444
+    m_Key: button.next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845445
+    m_Key: objective.order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845446
+    m_Key: objective.gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845447
+    m_Key: status.paused
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845448
+    m_Key: status.wrong_exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845449
+    m_Key: status.stored
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845450
+    m_Key: status.blocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845451
+    m_Key: status.complete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845452
+    m_Key: instruction.move_selected
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845453
+    m_Key: hint.1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845454
+    m_Key: hint.2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845455
+    m_Key: hint.3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845456
+    m_Key: hint.4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845457
+    m_Key: hint.5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981446770688
+    m_Key: status.cargo_delivered
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981526462464
+    m_Key: status.wrong_cargo_destination
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981600000001
+    m_Key: debug.levels
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743906951045120
+    m_Key: debug.language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542592
+    m_Key: debug.compass
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542593
+    m_Key: objective.exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542594
+    m_Key: objective.cargo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542595
+    m_Key: objective.switches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736896
+    m_Key: objective.separator
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736897
+    m_Key: status.compass_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736898
+    m_Key: status.compass_unavailable
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 6105699250794135552
+  references:
+    version: 2
+    RefIds:
+    - rid: 6105699250794135552
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1785956029882

@@ -1,0 +1,156 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Gameplay_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 2a57e8742b68dd747a3ec53816a24b3b, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1267736576
+    m_Localized: Level {0}/{1}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1326456832
+    m_Localized: Moves {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1330651136
+    m_Localized: Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1330651137
+    m_Localized: Resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845440
+    m_Localized: Undo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845441
+    m_Localized: Move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845442
+    m_Localized: Restart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845443
+    m_Localized: Hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845444
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845445
+    m_Localized: Clear the routes in the correct order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845446
+    m_Localized: Guide the caravan cart to the gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845447
+    m_Localized: Paused
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845448
+    m_Localized: This gate belongs to another cart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845449
+    m_Localized: The cart is held until the route opens
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845450
+    m_Localized: The route is blocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845451
+    m_Localized: Route cleared!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845452
+    m_Localized: Press Move to drive the selected cart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845453
+    m_Localized: Select the cart, then press Move until it reaches the gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845454
+    m_Localized: Keep moving the cart forward to its gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845455
+    m_Localized: Follow the arrow to the upper gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845456
+    m_Localized: Move the vertical cart out before the horizontal cart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1334845457
+    m_Localized: Clear the upper cart, then the vertical cart, then the horizontal
+      cart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981446770688
+    m_Localized: Cargo delivered to its matching symbol!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981526462464
+    m_Localized: This cargo belongs at a different symbol
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14981600000001
+    m_Localized: All Levels
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743906951045120
+    m_Localized: 'Language: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542592
+    m_Localized: Compass
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542593
+    m_Localized: Guide the caravan cart to the gate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542594
+    m_Localized: Deliver cargo to matching destinations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907026542595
+    m_Localized: Activate all switches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736896
+    m_Localized: " \xB7 "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736897
+    m_Localized: 'Compass: move {0} next'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736898
+    m_Localized: Compass found no safe next move
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

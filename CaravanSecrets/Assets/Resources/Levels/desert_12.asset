@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59512c23c6960934e9eaf6c8714c77b3, type: 3}
+  m_Name: desert_12
+  m_EditorClassIdentifier: CaravanSecrets.Levels::CaravanSecrets.Data.Levels.LevelAsset
+  levelId: desert_12
+  regionId: oasis
+  levelNumber: 2
+  recommendedMoves: 9
+  rewardCoins: 34
+  width: 5
+  height: 5
+  cells: []
+  carts: []
+  destinations: []
+  cargo:
+  - Id: fabric
+    Position: {x: 0, y: 2}
+    Direction: 1
+    Type: 1
+  - Id: water
+    Position: {x: 2, y: 0}
+    Direction: 0
+    Type: 2
+  cargoDestinations:
+  - Position: {x: 4, y: 2}
+    Type: 1
+  - Position: {x: 2, y: 4}
+    Type: 2
+  objectives:
+  - Id: deliver
+    Type: 1
+  - Id: switches
+    Type: 2
+  gates:
+  - Id: gate
+    Position: {x: 3, y: 2}
+    InitiallyOpen: 0
+  linkedSwitches:
+  - Id: switch
+    Position: {x: 2, y: 1}
+    GateIds:
+    - gate
+  storageSlots: []
+  directionTiles: []

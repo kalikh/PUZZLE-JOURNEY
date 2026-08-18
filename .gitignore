@@ -1,0 +1,56 @@
+# Unity generated directories
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+.utmp/
+
+# Local and generated builds
+[Bb]uild/
+[Bb]uilds/
+[Ss]erver[Dd]ata/
+*.apk
+*.aab
+*.unitypackage
+
+# IDE and operating-system files
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.DS_Store
+Thumbs.db
+
+# Crash, profiler, and local logs
+sysinfo.txt
+*.log
+crashlytics-build.properties
+
+# Addressables generated content state/build output
+**/AddressableAssetsData/*/addressables_content_state.bin
+
+# Local downloads and tool installers
+Installers/
+Tools/
+
+# Signing credentials and secrets
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.env
