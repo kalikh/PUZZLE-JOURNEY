@@ -1,43 +1,57 @@
-# Current Task: Commercial Vertical Slice — Phase 1 Baseline and Resource Reuse Audit
+# Current Task: Phase 2 — Long Journey Road and Camera Foundation
 
 ## Status
 
-**Complete (2026-08-18).** The baseline, resource reuse audit, tests, level validation, and Android build are recorded in `PROJECT_STATUS.md`. No package or external asset was downloaded.
+**Complete (2026-08-18).** Stable pre-change baseline commit: `a3587b94510936fe6e1740992223fb348d01f727`.
 
 ## Objective
 
-Establish a trustworthy technical and content baseline before any major refactor or new feature work. Inspect the complete existing Unity project, classify relevant resources, run the safest compile/test/level/build baseline available, record concrete gaps and conflicts, and produce the dependency-ordered implementation sequence.
+Implement one representative, reviewable Desert Road journey segment without changing puzzle rules or applying the system to all 30 levels.
 
-## Authorized Work
+Required sequence:
 
-- Inspect project structure, Unity/package configuration, scenes, prefabs, ScriptableObjects, code assemblies, input, localization, saving, audio, tests, build settings, and existing Android evidence.
-- Locate and evaluate movement, stage loading, undo, reset, hints, validation/solver, gates, switches, obstacles, progression, UI, audio, and saving.
-- Identify duplicate, disconnected, obsolete, placeholder, and missing systems.
-- Add the required concise resource reuse matrix and baseline evidence to `PROJECT_STATUS.md`.
-- Run Edit Mode, Play Mode, 30-level validation, and an Android development build only with the already installed toolchain and packages.
-- Document any build-breaking defect; repair it only when necessary to complete the baseline, using the smallest isolated change and regression coverage.
+`Start checkpoint → long desert road → puzzle location → puzzle completion → caravan travel animation → next checkpoint`
 
-## Explicit Exclusions
+## Authorized Scope
 
-- Do not yet implement the long-road camera, survival, characters, events, camp, economy, Stage 1–10 redesign, new scenes, or final polish.
-- Do not modify any level asset, scene, prefab, package manifest, project setting, or player-facing art during this phase unless a reproducible baseline blocker requires it.
-- Do not download, install, update, or import packages or external assets. Report any proposed addition to the user first with purpose, alternatives already present, compatibility, license, and approximate download size.
-- Do not begin optional monetization SDK integration, backend, multiplayer, ads, IAP, or external analytics.
+- Add a Journey domain/session model independent of `BoardGame` and board rules.
+- Track the current checkpoint and journey phase.
+- Add one reusable long-road presentation using the existing Desert Road visual resources.
+- Add controlled camera transitions between start checkpoint, puzzle location, and next checkpoint.
+- Keep the puzzle board at its existing usable mobile scale.
+- Trigger the representative post-puzzle travel sequence from completion/Next, then advance normally.
+- Add focused Edit Mode and Play Mode tests.
+- Capture before-puzzle, during-puzzle, and after-travel screenshots.
+- Run the full tests, 30-level validation, frozen-level hash check, and Android development build.
+
+## Frozen / Prohibited
+
+- Do not modify puzzle movement, collision, undo, restart, solver, validator, level loading contracts, save architecture, localization architecture, or existing level data.
+- Do not implement survival, camp, ads, purchases, analytics, audio production, characters, events, economy, or new puzzle mechanics.
+- Do not apply journey presentation to all 30 levels.
+- Do not shrink puzzle objects or change board scale to simulate distance.
+- Camera movement must never change puzzle state.
+- Do not add or download packages or external assets.
 
 ## Acceptance Criteria
 
-- Complete repository/resource inspection is recorded with concrete paths.
-- Every relevant existing resource category is classified as REUSE AS-IS, REUSE WITH IMPROVEMENT, REPLACE, or ARCHIVE/IGNORE.
-- Current architecture, duplicate/placeholder findings, missing systems, package sufficiency, and risks are documented.
-- Unity compilation succeeds using `6000.3.21f1` or the exact blocker is recorded.
-- Current Edit Mode and Play Mode suites run with results recorded.
-- All 30 existing levels validate; accepted level hashes remain unchanged.
-- Android baseline build succeeds using installed components or the exact blocker is recorded.
-- `PROJECT_STATUS.md` contains the baseline and one ordered next implementation milestone.
-- No package or external asset is downloaded.
+- `JourneySession` can report the current checkpoint and valid phase transitions without referencing puzzle types.
+- One representative segment visibly spans more than one viewport and uses start/puzzle/next landmarks.
+- Camera transitions are controlled and input is blocked only during travel.
+- Puzzle objects retain the established `CellSize` and touch bounds.
+- Completing representative level 1 and pressing Next plays travel to the next checkpoint before level 2 loads.
+- Existing non-representative level navigation remains unchanged.
+- Full Edit/Play tests pass, 30 levels validate, levels 1–5 hashes remain unchanged, and Android development build succeeds.
+- Required screenshots and limitations are recorded.
 
-## Frozen Systems
+## Completion Evidence
 
-- All 30 accepted level assets during this inspection phase; levels 1–5 retain their permanent byte-freeze.
-- Existing board movement, collision, undo/restart, solver/validator, localization, bootstrap/save foundations, scenes/prefabs, packages, and Android settings unless a reproducible baseline defect is documented.
-- `Docs/Archive/`.
+- Journey domain and presentation remain separate from `BoardGame`; camera movement does not mutate puzzle state.
+- Representative sequence verified on Android: start checkpoint, approach road, level 1 puzzle, departure travel, next checkpoint, then level 2.
+- Edit Mode: **67/67 passed** (`Logs/phase2-editmode.xml`).
+- Play Mode: **7/7 passed** (`Logs/phase2-playmode.xml`).
+- Level validation: **30/30 passed** (`Logs/phase2-level-validation.log`).
+- Android development build succeeded (`Logs/phase2-android-build.log`).
+- Levels 1–5 remain byte-identical to the accepted baseline.
+- No package, external asset, survival, camp, monetization, analytics, audio, or new puzzle mechanic was added.
+- The installed emulator is x86_64 while the current APK contains ARM64 native libraries only; device validation was used and no emulator image/package was downloaded.

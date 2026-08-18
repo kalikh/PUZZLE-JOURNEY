@@ -6,13 +6,36 @@ The specification audit baseline remains in `Docs/SPEC_COMPLIANCE_REPORT.md`. St
 
 ## Current Development Stage
 
-**Commercial Vertical Slice Program — Phase 1 baseline accepted (2026-08-18).**
+**Commercial Vertical Slice Program — Phase 2 representative journey foundation complete (2026-08-18), pending user visual review before rollout.**
 
 Stages 2–4 remain accepted and preserved. The user adopted the root `update.md` as a mandatory extension of the master specification. Phase 1 inspection and resource accounting is complete. Long-road presentation, survival, characters, events, camp, and connected commercial progression are not yet implemented.
 
 ## Active Task
 
-**Commercial Vertical Slice — Phase 1 Baseline and Resource Reuse Audit** — complete; see `Docs/CURRENT_TASK.md`.
+**Phase 2 — Long Journey Road and Camera Foundation** — representative segment complete; see `Docs/CURRENT_TASK.md`.
+
+## Phase 2 Representative Journey Evidence — 2026-08-18
+
+- Pre-change Git baseline: `a3587b94510936fe6e1740992223fb348d01f727` (`chore: establish stable Unity baseline`).
+- Added a pure `JourneySession` state model with checkpoint identity and controlled phases, independent of board/puzzle types.
+- Added one presentation segment spanning start checkpoint, long road, puzzle location, caravan departure, and next checkpoint.
+- Camera follows only the presentation caravan during transitions and eases back to the fixed puzzle camera; puzzle scale and touch bounds remain unchanged.
+- Applied only to the representative level 1 → level 2 transition; no rollout across all 30 levels.
+- Edit Mode: **67 passed, 0 failed** (`Logs/phase2-editmode.xml`).
+- Play Mode: **7 passed, 0 failed** (`Logs/phase2-playmode.xml`).
+- Level validation/solver: **30/30** (`Logs/phase2-level-validation.log`).
+- Android development build succeeded: `CaravanSecrets/Builds/Android/CaravanSecrets-development.apk`, **96,509,208 bytes** (`Logs/phase2-android-build.log`).
+- Physical-device smoke test passed: road/landmarks render, touch movement completes level 1, journey departure reaches the next checkpoint, and level 2 loads.
+- Evidence images: `Logs/phase2-before-puzzle.png`, `Logs/phase2-during-puzzle.png`, and `Logs/phase2-after-travel.png` (the final image is captured at/after the verified checkpoint transition).
+- Existing levels 1–5 retain their accepted SHA-256 hashes.
+- No packages or external assets were downloaded.
+
+### Phase 2 Known Limitations
+
+- The representative road reuses current art and still needs seam/composition polish after visual review.
+- Journey progress is session-level foundation only; permanent save migration and full journey-map rollout are intentionally deferred.
+- Current Android APK is ARM64-only, while the installed emulator is x86_64; emulator execution requires a compatible build target or ARM64 emulator image and was not added without approval.
+- Survival, camp, characters, events, economy, ads, purchases, analytics, and audio remain unimplemented by design.
 
 - HUD objective text binds to typed `ObjectiveDefinition` (localized EN/AR).
 - Development pause browser: All Levels + language toggle + Compass booster smoke (Spec §50).

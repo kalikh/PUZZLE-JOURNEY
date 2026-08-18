@@ -1,80 +1,84 @@
-# Task Analysis: Commercial Vertical Slice — Phase 1 Baseline and Resource Reuse Audit
+# Task Analysis: Phase 2 — Long Journey Road and Camera Foundation
 
-## Game Vision
+## Game Vision and Current Stage
 
-Caravan Secrets is an offline-first Arabic/English portrait mobile game whose dominant identity remains directional caravan path puzzles. The adopted extension connects those puzzles to a visually long desert journey, lightweight survival decisions, useful characters, events, rewards, persistent camp upgrades, and progression. The first commercial target is ten polished Desert Road stages lasting roughly 15–25 minutes.
+Caravan Secrets remains a bilingual portrait directional caravan puzzle. Stage 4 puzzle systems are accepted. Commercial Vertical Slice Phase 1 established a green baseline and Git protection; Phase 2 now adds only the journey/road/camera foundation around one representative puzzle.
 
-## Current Development Stage
+## Exact Task
 
-Stage 4 is accepted: 30 solver-confirmed puzzle levels and the existing cargo, gates/switches, storage, direction tiles, boosters, stars, localization, and Android slice exist. The commercial vertical-slice program starts now at Phase 1 inspection; long-road, survival, characters, events, camp, and connected progression are not implemented.
+Build an independent Journey state model and one integrated Desert Road segment demonstrating start checkpoint, continuous road, puzzle stop, completion-triggered caravan travel, and arrival at the next checkpoint.
 
-## Exact Current Task
+## Relevant Specification Sections
 
-Inspect and baseline the existing project, classify resources for reuse, run current verification, document gaps, and select the next single dependency-safe milestone. No new product feature is authorized in this phase.
-
-## Relevant Specification References
-
-- Project Specification Authority and Commercial Vertical Slice Extension.
 - Core Game Concept; Gameplay Structure Rule; Primary Puzzle Mechanic.
-- Mandatory Reuse of Existing Project Resources.
-- Target Vertical Slice; Long Desert Road Requirement.
-- Architecture; Save System; Performance and Android; Testing.
-- Implementation Order; Definition of Done; Final Report Format.
+- Commercial Vertical Slice Extension.
+- Long Desert Road Requirement.
+- Architecture; Camera and Resolution; Mobile Input; Performance and Android; Testing.
 
 ## Existing Systems to Preserve
 
-- `BoardGame`, `BoardState`, `LevelDefinition`, `LevelValidator`, and `LevelSolver` deterministic puzzle domain.
-- `LevelAsset` data pipeline, 30 accepted assets, editor tooling, and recorded solver solutions.
-- Gameplay movement/input, undo/reset, typed objectives, cargo/mechanisms, boosters/stars, localization/Arabic shaping, Bootstrap/service registration, and atomic backup save foundation.
-- Existing Region 1 art/prefabs/HUD and Android configuration until evidence supports targeted improvement.
+- `BoardGame`, `BoardState`, movement/collision, snapshots, undo/restart, solver/validator.
+- `LevelAsset` loading and all 30 validated level assets.
+- `GameplayController` board scale (`CellSize = 1.25f`) and enlarged touch bounds.
+- Bootstrap/save, localization/Arabic shaping, HUD, debug browser, packages, Android settings.
+- Existing Desert Road background, road strip, cart, gate, rock, and switch assets.
+
+## Planned Architecture
+
+- `Game/Journey/JourneySession.cs`: pure checkpoint/phase state and transition validation; no Unity or puzzle dependency.
+- `Features/Journey/RepresentativeJourneyPresenter.cs`: creates the continuous road and landmarks from existing prefabs and animates camera/caravan presentation.
+- `GameplayController`: minimal orchestration hooks only—start representative arrival, block puzzle input during camera travel, and route completed level 1 through departure before loading level 2.
+- Tests: pure transition tests plus Play Mode integration proving camera/puzzle separation and post-completion progression.
 
 ## Files Expected to Change
 
-- `Docs/PROJECT_SPEC.md` (adoption record only).
-- `Docs/CURRENT_TASK.md`.
-- `Docs/TASK_ANALYSIS.md`.
-- `Docs/PROJECT_STATUS.md` after inspection and verification.
-- Generated logs/build evidence only. Implementation files only if a reproducible build-breaking defect blocks the baseline.
+- New Journey domain and presentation source files with Unity `.meta` files.
+- `GameplayController.cs` for isolated orchestration hooks.
+- Game and Play Mode tests/assembly references as required.
+- `Docs/CURRENT_TASK.md`, `Docs/TASK_ANALYSIS.md`, and `Docs/PROJECT_STATUS.md`.
+- Generated ignored logs, APK, and screenshots.
 
 ## Files That Must Not Change
 
-- `Assets/Resources/Levels/desert_01.asset` through `desert_30.asset`.
-- Scenes, prefabs, art, localization tables, packages, project settings, and runtime source during audit unless the smallest documented blocker fix is required.
-- `Docs/Archive/` and unrelated user files.
+- All 30 `Assets/Resources/Levels/*.asset` files.
+- `BoardGame.cs`, `BoardState.cs`, `LevelDefinition.cs`, movement/collision, solver, validator, boosters/results.
+- Bootstrap/save/localization implementation and tables.
+- Existing scenes, prefabs, raster art, package manifest, and project settings unless a reproducible blocker is documented.
+- `Docs/Archive/`.
 
 ## Tests Planned
 
-- Unity Edit Mode suite.
-- Unity Play Mode suite.
-- `LevelTools.ValidateAll` for 30 assets and hash comparison for frozen levels.
-- Android development build with the already installed Unity/SDK/NDK/JDK toolchain.
-- Read-only inspection of generated build/device evidence; no package downloads.
+- JourneySession valid/invalid transition and checkpoint tests.
+- Representative journey presenter structure and camera phase integration.
+- Existing Edit Mode and Play Mode suites.
+- 30-level validation and frozen hashes.
+- Android development build and three device screenshots.
 
-## Acceptance Criteria
+## Risks and Mitigations
 
-- Concrete architecture/resource inventory and reuse matrix.
-- Package sufficiency assessment with no downloads.
-- Baseline compile/tests/level validation/build results.
-- Identified gaps, risks, placeholders, and duplicates supported by file evidence.
-- One exact next milestone consistent with the adopted extension.
-
-## Risks and Conflicts
-
-- The root extension asks for one status file, while repository policy mandates `CURRENT_TASK.md` and `TASK_ANALYSIS.md`; `AGENTS.md` has priority, so required control documents remain and product status stays consolidated in `PROJECT_STATUS.md`.
-- Existing Stage 4 content covers 30 logical boards, while the new vertical slice requires redesigning the first ten into a connected journey. No accepted asset will change during baseline; later content changes require an explicitly authorized task and regression plan.
-- Existing art may be temporary rather than commercial final art; it must be inspected and classified before replacement or external acquisition.
-- Large feature breadth creates integration risk; implementation will follow dependency gates rather than parallel disconnected systems.
+- Camera coroutine could interfere with scene tests: expose deterministic phase state and keep non-representative navigation unchanged.
+- Journey visuals could be destroyed by board rebuild: use a separate presentation root/component.
+- Background coverage could reveal empty world during travel: tile existing background across checkpoint sections.
+- Travel could accidentally mutate puzzle state: presenter receives no `BoardGame`; only controller observes completion and starts presentation.
+- Touch usability could regress: retain CellSize, camera puzzle zoom, and existing hit expansion unchanged.
 
 ## Consistency Statement
 
-The requested adoption and Phase 1 work are consistent with the newly adopted extension and the original master specification. The user explicitly authorized the extension and prohibited unreviewed downloads. No unresolved instruction conflict blocks this audit.
+The task exactly matches the user-authorized Phase 2 scope and the adopted specification. It explicitly excludes every prohibited system. No instruction conflict exists.
 
-## Verification Checkpoint — 2026-08-18
+## Pre-Implementation Report
 
-- Unity `6000.3.21f1` compiled without C# errors.
-- Edit Mode passed 64/64; Play Mode passed 6/6.
-- All 30 level assets validated and solved; frozen levels 1–5 retain their accepted SHA-256 hashes.
-- Android development APK built successfully using only the installed SDK/NDK/JDK and cached packages.
-- No source, scene, prefab, ScriptableObject, package manifest, project setting, localization table, or player-facing asset was modified.
-- No package or external asset was downloaded or imported.
-- Phase 1 acceptance criteria are met. The next dependency-safe milestone is Phase 2: journey foundation and long-road presentation architecture, after its own task analysis.
+- Documents read completely: `AGENTS.md`, `PROJECT_SPEC.md`, `PROJECT_STATUS.md`, `CURRENT_TASK.md`.
+- Stable baseline commit created before Phase 2: `a3587b94510936fe6e1740992223fb348d01f727`.
+- Planned implementation files and tests are listed above.
+- Explicit exclusions: survival, camp, ads, purchases, analytics, audio, characters, events, economy, new mechanics, all-level rollout, packages, and external assets.
+
+## Completion Verification
+
+- Created the planned pure journey state model and isolated presentation assembly.
+- Integrated only the representative level 1 journey; board rules, accepted level assets, save, localization, scenes, prefabs, art, packages, and project settings were not modified.
+- Full regression result: Edit Mode 67/67, Play Mode 7/7, level validation 30/30, Android build successful.
+- Physical-device test confirmed rendering, touch movement, level completion, departure travel, next checkpoint, and subsequent level loading.
+- Puzzle objects retain `CellSize = 1.25f`; presentation camera receives no `BoardGame` reference.
+- The installed x86_64 emulator cannot load the ARM64-only development APK. This is an environment compatibility limitation, not a gameplay failure; no additional system image or package was downloaded.
+- Visual review is required before any rollout to additional levels.

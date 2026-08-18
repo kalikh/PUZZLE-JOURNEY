@@ -10,11 +10,48 @@ using TMPro;
 using System.Collections.Generic;
 using System.Reflection;
 using CaravanSecrets.Game.Board;
+using CaravanSecrets.Game.Journey;
+using CaravanSecrets.Features.Journey;
 
 namespace CaravanSecrets.PlayMode.Tests
 {
     public sealed class GameplaySceneTests
     {
+        [UnityTest]
+        public IEnumerator RepresentativeJourney_ApproachesPuzzleAndAdvancesCheckpointAfterCompletion()
+        {
+            yield return LocalizationSettings.InitializationOperation;
+            LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.GetLocale("en");
+            SceneManager.LoadScene("Gameplay");
+            yield return null;
+
+            var presenter = Object.FindFirstObjectByType<RepresentativeJourneyPresenter>();
+            Assert.That(presenter, Is.Not.Null);
+            Assert.That(presenter.Progress.CurrentCheckpointId, Is.EqualTo("desert_start"));
+            Assert.That(GameObject.Find("Start Checkpoint"), Is.Not.Null);
+            Assert.That(GameObject.Find("Next Checkpoint"), Is.Not.Null);
+            Assert.That(GameObject.Find("Road To Puzzle"), Is.Not.Null);
+            Assert.That(GameObject.Find("Road To Next Checkpoint"), Is.Not.Null);
+
+            yield return WaitFor(() => presenter.Session.Phase == JourneyPhase.AtPuzzle, 5f);
+            Assert.That(Camera.main.transform.position.y, Is.EqualTo(0f).Within(0.05f));
+            var boardCart = GameObject.Find("a").GetComponent<SpriteRenderer>();
+            Assert.That(boardCart.bounds.size.x, Is.GreaterThan(0.5f));
+
+            var controller = Object.FindFirstObjectByType<GameplayController>();
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var game = (BoardGame)typeof(GameplayController).GetField("_game", flags).GetValue(controller);
+            var level = (IReadOnlyList<LevelDefinition>)typeof(GameplayController).GetField("_levels", flags).GetValue(controller);
+            var solution = LevelSolver.Solve(level[0]);
+            foreach (var objectId in solution.Moves) Assert.That(game.MoveObject(objectId), Is.True, objectId);
+            Assert.That(game.State.IsComplete, Is.True);
+
+            typeof(GameplayController).GetMethod("HintFromHud", flags).Invoke(controller, null);
+            yield return WaitFor(() => presenter.Session.Phase == JourneyPhase.AtNextCheckpoint, 5f);
+            Assert.That(presenter.Progress.CurrentCheckpointId, Is.EqualTo("desert_checkpoint_02"));
+            yield return WaitFor(() => GameObject.Find("LevelLabel").GetComponent<TMP_Text>().text == "Level 2/30", 3f);
+        }
+
         [UnityTest]
         public IEnumerator HudLocalization_ResolvesEnglishAndArabicInsteadOfKeys()
         {
@@ -149,6 +186,13 @@ namespace CaravanSecrets.PlayMode.Tests
             Assert.That(GameObject.Find("Linked Switch switch_01"), Is.Not.Null);
             Assert.That(GameObject.Find("Storage Capacity 2"), Is.Not.Null);
             Assert.That(GameObject.Find("Direction Tile turn_01"), Is.Not.Null);
+        }
+
+        private static IEnumerator WaitFor(System.Func<bool> condition, float timeout)
+        {
+            var deadline = Time.realtimeSinceStartup + timeout;
+            while (!condition() && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(condition(), Is.True, $"Condition was not met within {timeout} seconds.");
         }
     }
 }

@@ -4,6 +4,8 @@ using System.Linq;
 using CaravanSecrets.Data.Levels;
 using CaravanSecrets.Game.Board;
 using CaravanSecrets.Game.Boosters;
+using CaravanSecrets.Game.Journey;
+using CaravanSecrets.Features.Journey;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Localization.Settings;
@@ -47,6 +49,8 @@ namespace CaravanSecrets.Features.Gameplay
         private int _levelIndex;
         private string _message = string.Empty;
         private bool _isAnimating;
+        private bool _journeyTransitioning;
+        private RepresentativeJourneyPresenter _journeyPresenter;
 
         private static readonly Color Sand = new(0.86f, 0.70f, 0.42f);
         private static readonly Color SandDark = new(0.66f, 0.47f, 0.24f);
@@ -89,6 +93,12 @@ namespace CaravanSecrets.Features.Gameplay
             Debug.Log($"CARAVAN_LEVELS_LOADED count={_levels.Count}");
             LoadLevel(0);
             CreateHud();
+            if (_levels.Count > 1 && _levels[0].Id == "desert_01")
+            {
+                _journeyPresenter = gameObject.AddComponent<RepresentativeJourneyPresenter>();
+                _journeyPresenter.Initialize(_camera, _camera.orthographicSize);
+                StartCoroutine(BeginRepresentativeJourney());
+            }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             _levelBrowser = gameObject.AddComponent<DevelopmentLevelBrowser>();
 #endif
@@ -109,6 +119,8 @@ namespace CaravanSecrets.Features.Gameplay
             _game = new BoardGame(_levels[_levelIndex]);
             _message = string.Empty;
             BuildBoard();
+            if (index != 0 && _camera != null)
+                _camera.transform.position = new Vector3(0, 0, -10);
             RenderHud();
         }
 
@@ -173,7 +185,7 @@ namespace CaravanSecrets.Features.Gameplay
 
         private void UndoFromHud()
         {
-            if (_isAnimating || !_game.Undo()) return;
+            if (_journeyTransitioning || _isAnimating || !_game.Undo()) return;
             _message = string.Empty;
             RefreshCarts();
             RenderHud();
@@ -181,7 +193,7 @@ namespace CaravanSecrets.Features.Gameplay
 
         private void RestartFromHud()
         {
-            if (_isAnimating) return;
+            if (_journeyTransitioning || _isAnimating) return;
             LoadLevel(_levelIndex);
         }
 
@@ -189,6 +201,12 @@ namespace CaravanSecrets.Features.Gameplay
         {
             if (_game.State.IsComplete)
             {
+                if (_levelIndex == 0 && _journeyPresenter != null &&
+                    _journeyPresenter.Session.Phase == JourneyPhase.AtPuzzle)
+                {
+                    StartCoroutine(CompleteRepresentativeJourney());
+                    return;
+                }
                 LoadLevel((_levelIndex + 1) % _levels.Count);
                 return;
             }
@@ -520,7 +538,7 @@ namespace CaravanSecrets.Features.Gameplay
 
         private void HandleTap(Vector2 screenPosition)
         {
-            if (_isPaused) return;
+            if (_isPaused || _journeyTransitioning) return;
             var world = _camera.ScreenToWorldPoint(screenPosition);
             if (_isAnimating) return;
             var cart = _game.State.Carts.FirstOrDefault(candidate =>
@@ -550,7 +568,7 @@ namespace CaravanSecrets.Features.Gameplay
 
         private void MoveSelectedObject()
         {
-            if (_isAnimating || _isPaused || string.IsNullOrEmpty(_selectedObjectId)) return;
+            if (_journeyTransitioning || _isAnimating || _isPaused || string.IsNullOrEmpty(_selectedObjectId)) return;
             var cart = _game.State.GetCart(_selectedObjectId);
             if (cart == null) { MoveSelectedCargo(); return; }
             if (cart.HasExited) return;
@@ -636,6 +654,22 @@ namespace CaravanSecrets.Features.Gameplay
             renderer.transform.position = target;
             renderer.gameObject.SetActive(!hideAtEnd);
             _isAnimating = false;
+        }
+
+        private IEnumerator BeginRepresentativeJourney()
+        {
+            _journeyTransitioning = true;
+            yield return _journeyPresenter.PlayApproach();
+            _journeyTransitioning = false;
+        }
+
+        private IEnumerator CompleteRepresentativeJourney()
+        {
+            _journeyTransitioning = true;
+            yield return _journeyPresenter.PlayDeparture();
+            _journeyPresenter.HideLandscape();
+            _journeyTransitioning = false;
+            LoadLevel(1);
         }
 
         private void OnApplicationPause(bool paused)
