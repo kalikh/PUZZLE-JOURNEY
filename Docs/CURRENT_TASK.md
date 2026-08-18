@@ -1,57 +1,41 @@
-# Current Task: Phase 2 — Long Journey Road and Camera Foundation
+# Current Task: Phase 2.1 — Journey Polish, Stability, and UX Validation
 
 ## Status
 
-**Complete (2026-08-18).** Stable pre-change baseline commit: `a3587b94510936fe6e1740992223fb348d01f727`.
+**In progress (started 2026-08-18).** Preserve commits `a3587b9` and `22488e8`.
 
 ## Objective
 
-Implement one representative, reviewable Desert Road journey segment without changing puzzle rules or applying the system to all 30 levels.
+Polish and validate the single representative journey so it reads as one intentional flow:
 
-Required sequence:
-
-`Start checkpoint → long desert road → puzzle location → puzzle completion → caravan travel animation → next checkpoint`
+`Checkpoint → Travel → Puzzle Location → Puzzle → Completion → Caravan Travel → Next Checkpoint → Next Level`
 
 ## Authorized Scope
 
-- Add a Journey domain/session model independent of `BoardGame` and board rules.
-- Track the current checkpoint and journey phase.
-- Add one reusable long-road presentation using the existing Desert Road visual resources.
-- Add controlled camera transitions between start checkpoint, puzzle location, and next checkpoint.
-- Keep the puzzle board at its existing usable mobile scale.
-- Trigger the representative post-puzzle travel sequence from completion/Next, then advance normally.
-- Add focused Edit Mode and Play Mode tests.
-- Capture before-puzzle, during-puzzle, and after-travel screenshots.
-- Run the full tests, 30-level validation, frozen-level hash check, and Android development build.
+- Improve continuity and visual direction of the existing representative desert road using current assets only.
+- Smooth and stabilize camera framing across supported portrait resolutions and safe areas.
+- Make post-level travel single-shot, pause-safe, and ordered: completion, travel, checkpoint persistence, next-level unlock/load.
+- Persist stable journey/checkpoint progress through the existing `ISaveService` and `PlayerSaveData` architecture.
+- Add concise localized checkpoint/progress communication in Arabic and English without mirroring world direction.
+- Add missing journey, persistence, duplicate-prevention, pause/resume, resolution, localization, and integration tests.
+- Validate fresh launch through level 2 restart/reopen on Android and capture the five requested clean screenshots where possible.
 
 ## Frozen / Prohibited
 
-- Do not modify puzzle movement, collision, undo, restart, solver, validator, level loading contracts, save architecture, localization architecture, or existing level data.
-- Do not implement survival, camp, ads, purchases, analytics, audio production, characters, events, economy, or new puzzle mechanics.
-- Do not apply journey presentation to all 30 levels.
-- Do not shrink puzzle objects or change board scale to simulate distance.
-- Camera movement must never change puzzle state.
-- Do not add or download packages or external assets.
+- Do not modify puzzle movement, collision, undo, restart, solver, validator, boosters, result rules, or the 30 level assets.
+- Do not modify levels 1–5 under any circumstance unless a separately documented reproducible content defect is authorized.
+- Do not add survival, camp, water, food, health, morale, companions, events, ads, purchases, analytics, audio production, economy, or new major gameplay systems.
+- Do not broadly refactor stable save, localization, bootstrap, scene, prefab, package, or Android configuration.
+- Do not add/download packages, external assets, or an emulator image.
+- Do not begin Phase 3.
 
 ## Acceptance Criteria
 
-- `JourneySession` can report the current checkpoint and valid phase transitions without referencing puzzle types.
-- One representative segment visibly spans more than one viewport and uses start/puzzle/next landmarks.
-- Camera transitions are controlled and input is blocked only during travel.
-- Puzzle objects retain the established `CellSize` and touch bounds.
-- Completing representative level 1 and pressing Next plays travel to the next checkpoint before level 2 loads.
-- Existing non-representative level navigation remains unchanged.
-- Full Edit/Play tests pass, 30 levels validate, levels 1–5 hashes remain unchanged, and Android development build succeeds.
-- Required screenshots and limitations are recorded.
-
-## Completion Evidence
-
-- Journey domain and presentation remain separate from `BoardGame`; camera movement does not mutate puzzle state.
-- Representative sequence verified on Android: start checkpoint, approach road, level 1 puzzle, departure travel, next checkpoint, then level 2.
-- Edit Mode: **67/67 passed** (`Logs/phase2-editmode.xml`).
-- Play Mode: **7/7 passed** (`Logs/phase2-playmode.xml`).
-- Level validation: **30/30 passed** (`Logs/phase2-level-validation.log`).
-- Android development build succeeded (`Logs/phase2-android-build.log`).
-- Levels 1–5 remain byte-identical to the accepted baseline.
-- No package, external asset, survival, camp, monetization, analytics, audio, or new puzzle mechanic was added.
-- The installed emulator is x86_64 while the current APK contains ARM64 native libraries only; device validation was used and no emulator image/package was downloaded.
+- Road/checkpoint presentation is continuous and directional without obvious disconnected rectangles.
+- Camera transitions are smooth, settle before input, preserve puzzle touch size, respect safe areas, and fit 720×1600, 1080×1920, 1080×2400 plus one portrait tablet resolution where supported.
+- Completion/departure cannot trigger twice, load twice, or remain stuck after pause/resume.
+- Arrival is saved before level 2 loads; reopening restores a stable checkpoint/level state rather than an intermediate camera phase.
+- Restart remains puzzle-only and does not move journey progress backward.
+- Arabic and English journey text resolves through localization with correct RTL and unchanged world direction.
+- Existing tests pass, new tests cover the requested journey cases, level validation remains 30/30, levels 1–5 hashes remain unchanged, and Android development build succeeds.
+- Required screenshots and manual-validation outcomes are recorded.

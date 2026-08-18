@@ -11,6 +11,9 @@ namespace CaravanSecrets.Data.Save
         public int Coins;
         public int MapFragments;
         public string LanguageCode = "ar";
+        public string JourneyCheckpointId = "desert_start";
+        public string JourneyPhase = "AtStartCheckpoint";
+        public bool JourneyPuzzleCompleted;
         public List<LevelProgressData> Levels = new();
     }
 

@@ -52,6 +52,25 @@ namespace CaravanSecrets.Game.Journey
             Phase = JourneyPhase.AtStartCheckpoint;
         }
 
+        public static JourneySession RestoreStable(JourneySegmentDefinition segment, string checkpointId, JourneyPhase phase)
+        {
+            var session = new JourneySession(segment);
+            if (string.Equals(checkpointId, segment.NextCheckpointId, StringComparison.Ordinal) ||
+                phase == JourneyPhase.AtNextCheckpoint)
+            {
+                session.CurrentCheckpointId = segment.NextCheckpointId;
+                session.Phase = JourneyPhase.AtNextCheckpoint;
+                return session;
+            }
+
+            // Transitional phases are never resumed mid-animation. The puzzle is the
+            // last durable position once the approach has completed or departure began.
+            session.Phase = phase == JourneyPhase.AtPuzzle || phase == JourneyPhase.TravellingToNextCheckpoint
+                ? JourneyPhase.AtPuzzle
+                : JourneyPhase.AtStartCheckpoint;
+            return session;
+        }
+
         public void BeginApproach()
         {
             RequirePhase(JourneyPhase.AtStartCheckpoint);

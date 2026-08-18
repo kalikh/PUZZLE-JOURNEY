@@ -147,6 +147,18 @@ MonoBehaviour:
     m_Key: status.compass_unavailable
     m_Metadata:
       m_Items: []
+  - m_Id: 743907030736899
+    m_Key: status.journey_to_puzzle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736900
+    m_Key: status.journey_to_checkpoint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736901
+    m_Key: status.checkpoint_reached
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

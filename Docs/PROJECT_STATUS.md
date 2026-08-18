@@ -8,6 +8,21 @@ The specification audit baseline remains in `Docs/SPEC_COMPLIANCE_REPORT.md`. St
 
 **Commercial Vertical Slice Program — Phase 2 representative journey foundation complete (2026-08-18), pending user visual review before rollout.**
 
+## Phase 2.1 Journey Polish — In Progress (2026-08-18)
+
+- Journey restoration now uses the existing `PlayerSaveData`/`ISaveService`; stable puzzle and next-checkpoint states survive restart, while intermediate travel phases normalize safely.
+- Post-level departure is single-shot, pauses safely, saves checkpoint arrival before loading level 2, and prevents duplicate loading.
+- Added localized English/Arabic travel and checkpoint status messages.
+- Camera reframes when portrait aspect changes without changing board scale or puzzle rules.
+- Journey road uses three overlapping bent sections from existing art; journey landscape is hidden while actively solving so travel strips no longer intrude into the puzzle view.
+- Edit Mode: **73/73 passed** (`Logs/phase2-1-editmode.xml`).
+- Play Mode: **9/9 passed** (`Logs/phase2-1-playmode-final2.xml`).
+- Level validation: **30/30 passed** (`Logs/phase2-1-level-validation.log`).
+- Android development build succeeded: `CaravanSecrets/Builds/Android/CaravanSecrets-development.apk`, **96,510,215 bytes** (`Logs/phase2-1-android-build-final2.log`).
+- Levels 1–5 retain their accepted hashes; no level asset, puzzle-domain file, package, scene, prefab, or project setting changed.
+- Latest APK installed on device. Clean final manual screenshots remain pending because an external picture-in-picture/video overlay obscured the application and the device was not visually idle. This is not being worked around in game code.
+- Previous device save was backed up to `Logs/phase2-1-device-save-backup.json`; the user explicitly approved clearing the app save for a fresh-launch test.
+
 Stages 2–4 remain accepted and preserved. The user adopted the root `update.md` as a mandatory extension of the master specification. Phase 1 inspection and resource accounting is complete. Long-road presentation, survival, characters, events, camp, and connected commercial progression are not yet implemented.
 
 ## Active Task

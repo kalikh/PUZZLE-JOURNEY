@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Collections;
+using System;
 using System.Linq;
+using CaravanSecrets.Core.Bootstrap;
 using CaravanSecrets.Data.Levels;
+using CaravanSecrets.Data.Save;
 using CaravanSecrets.Game.Board;
 using CaravanSecrets.Game.Boosters;
 using CaravanSecrets.Game.Journey;
@@ -51,6 +54,12 @@ namespace CaravanSecrets.Features.Gameplay
         private bool _isAnimating;
         private bool _journeyTransitioning;
         private RepresentativeJourneyPresenter _journeyPresenter;
+        private ISaveService _saveService;
+        private PlayerSaveData _saveData;
+        private bool _journeyDepartureStarted;
+        private bool _nextLevelLoaded;
+        private bool _applicationPaused;
+        private float _lastCameraAspect;
 
         private static readonly Color Sand = new(0.86f, 0.70f, 0.42f);
         private static readonly Color SandDark = new(0.66f, 0.47f, 0.24f);
@@ -91,13 +100,21 @@ namespace CaravanSecrets.Features.Gameplay
             }
 #endif
             Debug.Log($"CARAVAN_LEVELS_LOADED count={_levels.Count}");
-            LoadLevel(0);
+            var bootstrap = FindFirstObjectByType<GameBootstrap>();
+            _saveService = bootstrap?.Services?.Resolve<ISaveService>();
+            _saveData = _saveService?.Load() ?? new PlayerSaveData();
+            var initialIndex = FindSavedLevelIndex(_saveData.CurrentLevelId);
+            LoadLevel(initialIndex);
             CreateHud();
-            if (_levels.Count > 1 && _levels[0].Id == "desert_01")
+            if (initialIndex == 0 && _levels.Count > 1 && _levels[0].Id == "desert_01")
             {
                 _journeyPresenter = gameObject.AddComponent<RepresentativeJourneyPresenter>();
-                _journeyPresenter.Initialize(_camera, _camera.orthographicSize);
-                StartCoroutine(BeginRepresentativeJourney());
+                var restoredPhase = ParseJourneyPhase(_saveData.JourneyPhase);
+                _journeyPresenter.Initialize(_camera, _camera.orthographicSize, _saveData.JourneyCheckpointId, restoredPhase);
+                if (_journeyPresenter.Session.Phase == JourneyPhase.AtStartCheckpoint)
+                    StartCoroutine(BeginRepresentativeJourney());
+                else if (_saveData.JourneyPuzzleCompleted)
+                    StartCoroutine(ResumeCompletedRepresentativeJourney());
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             _levelBrowser = gameObject.AddComponent<DevelopmentLevelBrowser>();
@@ -106,6 +123,8 @@ namespace CaravanSecrets.Features.Gameplay
 
         private void Update()
         {
+            if (!_journeyTransitioning && _camera != null && Mathf.Abs(_camera.aspect - _lastCameraAspect) > 0.001f)
+                ApplyPuzzleCameraFraming();
             if (TryGetPointerDown(out var screenPosition))
             {
                 HandleTap(screenPosition);
@@ -146,6 +165,7 @@ namespace CaravanSecrets.Features.Gameplay
         {
             _isPaused = !_isPaused;
             Time.timeScale = _isPaused ? 0 : 1;
+            _journeyPresenter?.SetSuspended(_isPaused || _applicationPaused);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (_isPaused) _levelBrowser?.Show(_levels.Count, _levelIndex, OpenLevelFromBrowser, ToggleLanguageFromBrowser, UseCompassFromBrowser);
             else _levelBrowser?.Hide();
@@ -194,6 +214,11 @@ namespace CaravanSecrets.Features.Gameplay
         private void RestartFromHud()
         {
             if (_journeyTransitioning || _isAnimating) return;
+            if (_levelIndex == 0 && _saveData != null && _saveData.JourneyPuzzleCompleted)
+            {
+                _saveData.JourneyPuzzleCompleted = false;
+                SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+            }
             LoadLevel(_levelIndex);
         }
 
@@ -204,7 +229,8 @@ namespace CaravanSecrets.Features.Gameplay
                 if (_levelIndex == 0 && _journeyPresenter != null &&
                     _journeyPresenter.Session.Phase == JourneyPhase.AtPuzzle)
                 {
-                    StartCoroutine(CompleteRepresentativeJourney());
+                    RecordRepresentativeCompletion();
+                    if (!_journeyDepartureStarted) StartCoroutine(CompleteRepresentativeJourney());
                     return;
                 }
                 LoadLevel((_levelIndex + 1) % _levels.Count);
@@ -269,11 +295,18 @@ namespace CaravanSecrets.Features.Gameplay
             foreach (var cargo in state.Cargo)
                 _cargoRenderers[cargo.Id] = CreateCargo(cargo);
 
-            var width = state.Width * CellSize;
-            var height = state.Height * CellSize;
+            ApplyPuzzleCameraFraming();
+        }
+
+        private void ApplyPuzzleCameraFraming()
+        {
+            if (_camera == null || _game == null) return;
+            var width = _game.State.Width * CellSize;
+            var height = _game.State.Height * CellSize;
             var halfHeightNeeded = height * 0.5f + CellSize * 0.8f;
             var halfWidthNeeded = width * 0.5f / Mathf.Max(0.2f, _camera.aspect) + CellSize * 0.4f;
             _camera.orthographicSize = Mathf.Max(halfHeightNeeded, halfWidthNeeded);
+            _lastCameraAspect = _camera.aspect;
             FitBackground();
         }
 
@@ -594,6 +627,7 @@ namespace CaravanSecrets.Features.Gameplay
             {
                 _message = GameplayStrings.Get("status.complete");
                 _feedback.PlayCompletion(_gateRenderers);
+                RecordRepresentativeCompletion();
             }
             if (cart.HasExited) _selectedObjectId = null;
             RenderHud();
@@ -624,6 +658,7 @@ namespace CaravanSecrets.Features.Gameplay
             {
                 _message = GameplayStrings.Get("status.complete");
                 _feedback.PlayCompletion(_gateRenderers);
+                RecordRepresentativeCompletion();
             }
             if (cargo.IsDelivered) _selectedObjectId = null;
             RenderHud();
@@ -659,26 +694,88 @@ namespace CaravanSecrets.Features.Gameplay
         private IEnumerator BeginRepresentativeJourney()
         {
             _journeyTransitioning = true;
+            _message = GameplayStrings.Get("status.journey_to_puzzle");
+            RenderHud();
             yield return _journeyPresenter.PlayApproach();
+            SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+            _message = string.Empty;
             _journeyTransitioning = false;
+            RenderHud();
         }
 
         private IEnumerator CompleteRepresentativeJourney()
         {
+            if (_journeyDepartureStarted) yield break;
+            _journeyDepartureStarted = true;
             _journeyTransitioning = true;
-            yield return _journeyPresenter.PlayDeparture();
+            _message = GameplayStrings.Get("status.journey_to_checkpoint");
+            RenderHud();
+            var departure = _journeyPresenter.PlayDeparture();
+            var arrivalSaved = false;
+            while (departure.MoveNext())
+            {
+                if (!arrivalSaved && _journeyPresenter.Session.Phase == JourneyPhase.AtNextCheckpoint)
+                {
+                    arrivalSaved = true;
+                    _saveData.JourneyPuzzleCompleted = false;
+                    SaveJourneyStable(JourneyPhase.AtNextCheckpoint, "desert_checkpoint_02", "desert_02");
+                    _message = GameplayStrings.Get("status.checkpoint_reached");
+                    RenderHud();
+                }
+                yield return departure.Current;
+            }
+            if (!arrivalSaved)
+            {
+                _saveData.JourneyPuzzleCompleted = false;
+                SaveJourneyStable(JourneyPhase.AtNextCheckpoint, "desert_checkpoint_02", "desert_02");
+            }
             _journeyPresenter.HideLandscape();
             _journeyTransitioning = false;
-            LoadLevel(1);
+            if (!_nextLevelLoaded)
+            {
+                _nextLevelLoaded = true;
+                LoadLevel(1);
+            }
+        }
+
+        private IEnumerator ResumeCompletedRepresentativeJourney()
+        {
+            yield return null;
+            if (!_journeyDepartureStarted) yield return CompleteRepresentativeJourney();
         }
 
         private void OnApplicationPause(bool paused)
         {
-            if (!paused || !_isPaused) return;
-            _isPaused = false;
-            Time.timeScale = 1;
-            RenderHud();
+            _applicationPaused = paused;
+            _journeyPresenter?.SetSuspended(paused || _isPaused);
         }
+
+        private void RecordRepresentativeCompletion()
+        {
+            if (_levelIndex != 0 || _saveData == null || _saveData.JourneyPuzzleCompleted) return;
+            _saveData.JourneyPuzzleCompleted = true;
+            SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+        }
+
+        private void SaveJourneyStable(JourneyPhase phase, string checkpointId, string levelId)
+        {
+            if (_saveData == null) return;
+            _saveData.JourneyPhase = phase.ToString();
+            _saveData.JourneyCheckpointId = checkpointId;
+            _saveData.CurrentLevelId = levelId;
+            _saveService?.Save(_saveData);
+        }
+
+        private int FindSavedLevelIndex(string levelId)
+        {
+            if (string.IsNullOrWhiteSpace(levelId)) return 0;
+            for (var index = 0; index < _levels.Count; index++)
+                if (string.Equals(_levels[index].Id, levelId, StringComparison.Ordinal)) return index;
+            return 0;
+        }
+
+        private static JourneyPhase ParseJourneyPhase(string value) =>
+            Enum.TryParse(value, out JourneyPhase phase) ? phase : JourneyPhase.AtStartCheckpoint;
 
         private void RefreshCarts()
         {

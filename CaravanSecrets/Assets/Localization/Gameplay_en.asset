@@ -151,6 +151,18 @@ MonoBehaviour:
     m_Localized: Compass found no safe next move
     m_Metadata:
       m_Items: []
+  - m_Id: 743907030736899
+    m_Localized: Travelling to the puzzle site
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736900
+    m_Localized: Caravan travelling to the next checkpoint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 743907030736901
+    m_Localized: Next checkpoint reached
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

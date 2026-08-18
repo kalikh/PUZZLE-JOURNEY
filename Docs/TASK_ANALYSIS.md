@@ -1,84 +1,97 @@
-# Task Analysis: Phase 2 — Long Journey Road and Camera Foundation
+# Task Analysis: Phase 2.1 — Journey Polish, Stability, and UX Validation
 
 ## Game Vision and Current Stage
 
-Caravan Secrets remains a bilingual portrait directional caravan puzzle. Stage 4 puzzle systems are accepted. Commercial Vertical Slice Phase 1 established a green baseline and Git protection; Phase 2 now adds only the journey/road/camera foundation around one representative puzzle.
+Caravan Secrets is a bilingual portrait directional caravan puzzle whose dominant board logic remains independent from the journey presentation. Phase 2 supplied one functional long-road/checkpoint prototype around level 1. Phase 2.1 must polish and harden only that representative experience before any wider rollout or Phase 3 system.
 
-## Exact Task
+## Exact Current Task
 
-Build an independent Journey state model and one integrated Desert Road segment demonstrating start checkpoint, continuous road, puzzle stop, completion-triggered caravan travel, and arrival at the next checkpoint.
+Make the existing checkpoint-to-puzzle-to-next-checkpoint sequence visually coherent, pause-safe, idempotent, persistently restorable, localized, and verified across supported portrait layouts and Android.
 
 ## Relevant Specification Sections
 
+- Commercial Vertical Slice Extension; Long Desert Road Requirement.
 - Core Game Concept; Gameplay Structure Rule; Primary Puzzle Mechanic.
-- Commercial Vertical Slice Extension.
-- Long Desert Road Requirement.
-- Architecture; Camera and Resolution; Mobile Input; Performance and Android; Testing.
+- Architecture and Separation of Concerns; Save System; Localization and RTL.
+- Camera and Resolution; Mobile Input; Performance and Android; Testing and Validation.
 
-## Existing Systems to Preserve
+## Current Journey Architecture
 
-- `BoardGame`, `BoardState`, movement/collision, snapshots, undo/restart, solver/validator.
-- `LevelAsset` loading and all 30 validated level assets.
-- `GameplayController` board scale (`CellSize = 1.25f`) and enlarged touch bounds.
-- Bootstrap/save, localization/Arabic shaping, HUD, debug browser, packages, Android settings.
-- Existing Desert Road background, road strip, cart, gate, rock, and switch assets.
+- `Game/Journey/JourneySession.cs` is a pure state machine containing the segment identity, current checkpoint, and five journey phases; it has no Unity or board dependency.
+- `Features/Journey/RepresentativeJourneyPresenter.cs` creates a runtime-only landscape from existing background, road, cart, gate, and rock prefabs and owns presentation coroutines.
+- `Features/Gameplay/GameplayController.cs` owns board orchestration, starts the representative approach for level 1, disables input while the presenter travels, and loads level 2 after departure.
+- `BoardGame` remains unaware of journey and camera state.
 
-## Planned Architecture
+## Existing Camera Behavior
 
-- `Game/Journey/JourneySession.cs`: pure checkpoint/phase state and transition validation; no Unity or puzzle dependency.
-- `Features/Journey/RepresentativeJourneyPresenter.cs`: creates the continuous road and landmarks from existing prefabs and animates camera/caravan presentation.
-- `GameplayController`: minimal orchestration hooks only—start representative arrival, block puzzle input during camera travel, and route completed level 1 through departure before loading level 2.
-- Tests: pure transition tests plus Play Mode integration proving camera/puzzle separation and post-completion progression.
+- Orthographic camera starts at journey Y=-14, follows the presentation caravan toward Y=0, then settles at the fixed puzzle position.
+- After completion it follows from the puzzle area to Y=14, holds, hides the landscape, resets to Y=0, and loads level 2.
+- Motion uses unscaled time and smoothstep interpolation, but currently lacks explicit pause suspension, safe-area framing validation, resize refresh, and transition cancellation/idempotence protection.
+
+## Current Checkpoint Flow
+
+- New in-memory session starts at `desert_start`.
+- Approach transitions through `TravellingToPuzzle` to `AtPuzzle`.
+- Completing level 1 and invoking Next transitions through `TravellingToNextCheckpoint` to `desert_checkpoint_02`, then loads level 2.
+- The current implementation reconstructs this session on every gameplay launch and does not restore checkpoint state.
+
+## Existing Save Interaction
+
+- Bootstrap registers the existing `JsonFileSaveService` behind `ISaveService`.
+- `PlayerSaveData` version 1 contains `CurrentLevelId`, currency, language, and level progress but no journey checkpoint fields.
+- Gameplay currently does not resolve/use that service. The smallest compatible extension is to add optional journey fields to `PlayerSaveData`, preserve version-1 JSON defaults, and have gameplay load/save only stable phases. No second save system is permitted.
 
 ## Files Expected to Change
 
-- New Journey domain and presentation source files with Unity `.meta` files.
-- `GameplayController.cs` for isolated orchestration hooks.
-- Game and Play Mode tests/assembly references as required.
+- `Assets/Scripts/Game/Journey/JourneySession.cs`: restoration/idempotence-safe domain behavior.
+- `Assets/Scripts/Features/Journey/RepresentativeJourneyPresenter.cs`: visual continuity, camera/pause/safe-area polish, stable restore presentation, localized checkpoint feedback hook.
+- `Assets/Scripts/Features/Gameplay/GameplayController.cs`: existing-save resolution, ordered checkpoint persistence, duplicate guard, stable restoration, localization/status orchestration.
+- `Assets/Scripts/Data/Save/PlayerSaveData.cs`: backward-compatible journey fields only.
+- Focused Edit Mode and Play Mode journey/save/layout tests and only necessary assembly references.
+- Existing English/Arabic string tables only if required journey keys are absent.
 - `Docs/CURRENT_TASK.md`, `Docs/TASK_ANALYSIS.md`, and `Docs/PROJECT_STATUS.md`.
-- Generated ignored logs, APK, and screenshots.
+- Ignored validation logs, APK, and screenshots.
 
 ## Files That Must Not Change
 
-- All 30 `Assets/Resources/Levels/*.asset` files.
-- `BoardGame.cs`, `BoardState.cs`, `LevelDefinition.cs`, movement/collision, solver, validator, boosters/results.
-- Bootstrap/save/localization implementation and tables.
-- Existing scenes, prefabs, raster art, package manifest, and project settings unless a reproducible blocker is documented.
-- `Docs/Archive/`.
+- All `Assets/Resources/Levels/*.asset`, especially byte-frozen levels 1–5.
+- `BoardGame.cs`, `BoardState.cs`, `LevelDefinition.cs`, solver, validator, movement/collision, undo/restart, boosters, and results.
+- Scenes, prefabs, raster art, package manifest/lock, project settings, Android toolchain, and archived documentation.
+- `JsonFileSaveService` and localization infrastructure unless a reproducible defect makes a smaller change impossible.
 
-## Tests Planned
+## Test Plan
 
-- JourneySession valid/invalid transition and checkpoint tests.
-- Representative journey presenter structure and camera phase integration.
-- Existing Edit Mode and Play Mode suites.
-- 30-level validation and frozen hashes.
-- Android development build and three device screenshots.
+- Edit Mode: restoration from stable checkpoints; intermediate phases normalize safely; duplicate departure/arrival prevention; backward-compatible save defaults and checkpoint persistence data.
+- Play Mode: full representative flow, input gating, single next-level load, pause/resume during travel, save before level 2, restored level/checkpoint, restart safety, EN/AR strings, and camera/layout bounds at 720×1600, 1080×1920, 1080×2400, and portrait tablet.
+- Full Edit/Play regression, 30-level validation, frozen hash verification, Android development build, install/launch/manual device sequence, and clean screenshots.
 
-## Risks and Mitigations
+## Risks and Possible Conflicts
 
-- Camera coroutine could interfere with scene tests: expose deterministic phase state and keep non-representative navigation unchanged.
-- Journey visuals could be destroyed by board rebuild: use a separate presentation root/component.
-- Background coverage could reveal empty world during travel: tile existing background across checkpoint sections.
-- Travel could accidentally mutate puzzle state: presenter receives no `BoardGame`; only controller observes completion and starts presentation.
-- Touch usability could regress: retain CellSize, camera puzzle zoom, and existing hit expansion unchanged.
+- Existing save data may omit new fields: normalize missing/invalid values to level 1/start without destroying other data.
+- Closing during travel could persist an impossible phase: save only stable arrival/checkpoint state and restore transitional values to the last stable position.
+- Time-scale pause could conflict with unscaled coroutines: explicitly suspend journey progression while application/game pause is active.
+- Camera/layout polishing could shrink puzzle objects: keep orthographic puzzle size and `CellSize = 1.25f` unchanged; adjust journey framing/content instead.
+- Completion feedback and Next may race: one controller gate must own departure and load exactly once.
+- Visual labels risk hard-coded text: resolve keys through the existing localization route and preserve world direction in Arabic.
+
+## Acceptance Criteria
+
+All criteria in `CURRENT_TASK.md` must be met, with objective test/build/device evidence, before marking Phase 2.1 complete.
 
 ## Consistency Statement
 
-The task exactly matches the user-authorized Phase 2 scope and the adopted specification. It explicitly excludes every prohibited system. No instruction conflict exists.
+The requested Phase 2.1 work is consistent with `PROJECT_SPEC.md` and narrows the adopted long-road milestone. No authoritative-instruction conflict exists. Phase 3 and all prohibited systems remain excluded.
 
 ## Pre-Implementation Report
 
-- Documents read completely: `AGENTS.md`, `PROJECT_SPEC.md`, `PROJECT_STATUS.md`, `CURRENT_TASK.md`.
-- Stable baseline commit created before Phase 2: `a3587b94510936fe6e1740992223fb348d01f727`.
-- Planned implementation files and tests are listed above.
-- Explicit exclusions: survival, camp, ads, purchases, analytics, audio, characters, events, economy, new mechanics, all-level rollout, packages, and external assets.
+- Read completely: `AGENTS.md`, `Docs/PROJECT_SPEC.md`, `Docs/PROJECT_STATUS.md`, `Docs/CURRENT_TASK.md`, `Docs/TASK_ANALYSIS.md`, and the attached Phase 2.1 task.
+- Architecture and current save gap inspected as documented above.
+- Planned files, frozen files, tests, risks, and exclusions are explicit.
+- Working tree was clean at commit `22488e8` before this documentation update.
 
-## Completion Verification
+## Validation So Far
 
-- Created the planned pure journey state model and isolated presentation assembly.
-- Integrated only the representative level 1 journey; board rules, accepted level assets, save, localization, scenes, prefabs, art, packages, and project settings were not modified.
-- Full regression result: Edit Mode 67/67, Play Mode 7/7, level validation 30/30, Android build successful.
-- Physical-device test confirmed rendering, touch movement, level completion, departure travel, next checkpoint, and subsequent level loading.
-- Puzzle objects retain `CellSize = 1.25f`; presentation camera receives no `BoardGame` reference.
-- The installed x86_64 emulator cannot load the ARM64-only development APK. This is an environment compatibility limitation, not a gameplay failure; no additional system image or package was downloaded.
-- Visual review is required before any rollout to additional levels.
+- Edit Mode 73/73, Play Mode 9/9, and level validation 30/30 pass.
+- Android development build succeeds and installs; levels 1–5 hashes remain unchanged.
+- Save restoration to level 2 was confirmed from the physical-device JSON and a relaunch.
+- Final clean five-shot visual evidence is still pending because an external phone overlay obscured capture. Phase 2.1 therefore remains in progress and is not marked complete.
