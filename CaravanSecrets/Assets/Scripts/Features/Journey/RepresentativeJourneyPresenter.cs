@@ -1,16 +1,24 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using CaravanSecrets.Game.Journey;
 using UnityEngine;
 
 namespace CaravanSecrets.Features.Journey
 {
+    /// <summary>
+    /// Data-driven journey presenter. The class name is retained for backward
+    /// compatibility with the accepted Phase 2/2.1 tests; behaviour is now driven
+    /// entirely by <see cref="JourneyChainSegment"/> data instead of hard-coded ids.
+    /// </summary>
     public sealed class RepresentativeJourneyPresenter : MonoBehaviour
     {
         private const float StartY = -14f;
         private const float PuzzleY = 0f;
         private const float NextY = 14f;
         private const float RoadWidth = 0.88f;
+        private static readonly Color TraveledTint = new(0.74f, 0.62f, 0.44f);
+        private static readonly Color UntraveledTint = new(1f, 0.98f, 0.92f);
         private Camera _camera;
         private Transform _landscape;
         private GameObject _travelCaravan;
@@ -19,31 +27,64 @@ namespace CaravanSecrets.Features.Journey
         private GameObject _cartPrefab;
         private GameObject _gatePrefab;
         private GameObject _rockPrefab;
+        private readonly List<SpriteRenderer> _approachRoad = new();
+        private readonly List<SpriteRenderer> _departureRoad = new();
         private bool _suspended;
         private float _puzzleCameraSize;
 
         public JourneySession Session { get; private set; }
         public IJourneyProgress Progress => Session;
+        public JourneyChainSegment Segment { get; private set; }
+        public string LevelId => Segment?.LevelId;
         public bool IsTransitioning => Session != null &&
             (Session.Phase == JourneyPhase.TravellingToPuzzle || Session.Phase == JourneyPhase.TravellingToNextCheckpoint);
 
-        public void Initialize(Camera camera, float puzzleCameraSize, string checkpointId = null,
-            JourneyPhase restoredPhase = JourneyPhase.AtStartCheckpoint)
+        public void Initialize(Camera camera, float puzzleCameraSize, JourneyChainSegment segment,
+            string checkpointId = null, JourneyPhase restoredPhase = JourneyPhase.AtStartCheckpoint)
         {
             _camera = camera != null ? camera : throw new ArgumentNullException(nameof(camera));
+            Segment = segment ?? throw new ArgumentNullException(nameof(segment));
             _puzzleCameraSize = puzzleCameraSize;
-            var segment = new JourneySegmentDefinition(
-                "desert_representative_01", "desert_start", "desert_puzzle_01", "desert_checkpoint_02");
-            Session = JourneySession.RestoreStable(segment, checkpointId, restoredPhase);
             _roadPrefab = Resources.Load<GameObject>("VerticalSlice/RoadStrip");
             _backgroundPrefab = Resources.Load<GameObject>("VerticalSlice/DesertBackground");
             _cartPrefab = Resources.Load<GameObject>("VerticalSlice/Cart");
             _gatePrefab = Resources.Load<GameObject>("VerticalSlice/Gate");
             _rockPrefab = Resources.Load<GameObject>("VerticalSlice/Rock");
-            BuildLandscape(puzzleCameraSize);
+            BuildLandscape(segment);
+            RestoreSession(checkpointId, restoredPhase);
             if (Session.Phase == JourneyPhase.AtPuzzle) ShowPuzzlePosition();
             else if (Session.Phase == JourneyPhase.AtNextCheckpoint) ShowNextCheckpointPosition();
             else SetCamera(StartY);
+        }
+
+        /// <summary>
+        /// Rebinds the presenter to another segment of the chain (for example after
+        /// a checkpoint arrival, when the next level becomes the active puzzle).
+        /// </summary>
+        public void BindSegment(JourneyChainSegment segment, bool showAtStartCheckpoint)
+        {
+            Segment = segment ?? throw new ArgumentNullException(nameof(segment));
+            Session = new JourneySession(segment.Definition);
+            BuildLandscape(segment);
+            if (showAtStartCheckpoint)
+            {
+                _landscape.gameObject.SetActive(true);
+                _travelCaravan.SetActive(true);
+                _travelCaravan.transform.position = new Vector3(0, StartY, 0);
+                SetCamera(StartY);
+            }
+            else ShowPuzzlePosition();
+        }
+
+        private void RestoreSession(string checkpointId, JourneyPhase restoredPhase)
+        {
+            // Arriving at a checkpoint from the previous segment is the same physical
+            // place as this segment's start checkpoint: the journey continues forward.
+            var phase = restoredPhase;
+            if (phase == JourneyPhase.AtNextCheckpoint &&
+                string.Equals(checkpointId, Segment.StartCheckpointId, StringComparison.Ordinal))
+                phase = JourneyPhase.AtStartCheckpoint;
+            Session = JourneySession.RestoreStable(Segment.Definition, checkpointId, phase);
         }
 
         public void SetSuspended(bool suspended) => _suspended = suspended;
@@ -73,6 +114,7 @@ namespace CaravanSecrets.Features.Journey
             yield return WaitUnpaused(0.9f);
             yield return AnimateTravel(StartY, PuzzleY - 3.8f, 2.1f, true);
             yield return AnimateCamera(PuzzleY - 3.8f, PuzzleY, 0.65f);
+            MarkTraveled(_approachRoad);
             _travelCaravan.SetActive(false);
             _landscape.gameObject.SetActive(false);
             Session.ArriveAtPuzzle();
@@ -86,6 +128,7 @@ namespace CaravanSecrets.Features.Journey
             _travelCaravan.transform.position = new Vector3(0, PuzzleY + 3.2f, 0);
             yield return AnimateTravel(PuzzleY + 3.2f, NextY, 2.35f, true);
             Session.ArriveAtNextCheckpoint();
+            MarkTraveled(_departureRoad);
             yield return WaitUnpaused(1.1f);
         }
 
@@ -94,21 +137,28 @@ namespace CaravanSecrets.Features.Journey
             if (_landscape != null) _landscape.gameObject.SetActive(false);
         }
 
-        private void BuildLandscape(float cameraSize)
+        private static void MarkTraveled(List<SpriteRenderer> road)
         {
-            _landscape = new GameObject("Representative Journey Segment").transform;
+            foreach (var renderer in road)
+                if (renderer != null) renderer.color = TraveledTint;
+        }
+
+        private void BuildLandscape(JourneyChainSegment segment)
+        {
+            if (_landscape != null) Destroy(_landscape.gameObject);
+            _approachRoad.Clear();
+            _departureRoad.Clear();
+            _landscape = new GameObject($"Journey Segment {segment.SegmentId}").transform;
             _landscape.SetParent(transform, false);
-            CreateBackground(StartY, cameraSize);
-            CreateBackground(PuzzleY, cameraSize);
-            CreateBackground(NextY, cameraSize);
-            CreateRoadPath(StartY, PuzzleY - 4.2f, "Road To Puzzle", -1.05f);
-            CreateRoadPath(PuzzleY + 4.2f, NextY, "Road To Next Checkpoint", 1.05f);
+            CreateBackground(StartY, _puzzleCameraSize);
+            CreateBackground(PuzzleY, _puzzleCameraSize);
+            CreateBackground(NextY, _puzzleCameraSize);
+            var bend = Mathf.Clamp(segment.RoadBend, -1.8f, 1.8f);
+            CreateRoadPath(StartY, PuzzleY - 4.2f, "Road To Puzzle", bend, _approachRoad);
+            CreateRoadPath(PuzzleY + 4.2f, NextY, "Road To Next Checkpoint", -bend, _departureRoad);
             CreateCheckpoint(StartY, "Start Checkpoint");
             CreateCheckpoint(NextY, "Next Checkpoint");
-            CreateLandmark(-2.15f, -9.5f, 0.75f, "West Dune Rock");
-            CreateLandmark(1.9f, -6.8f, 0.58f, "Approach Rock");
-            CreateLandmark(-1.8f, 7.1f, 0.66f, "Departure Rock");
-            CreateLandmark(2.2f, 10.2f, 0.82f, "Horizon Rock");
+            CreateLandmarks(segment);
             _travelCaravan = Instantiate(_cartPrefab, new Vector3(0, StartY, 0), Quaternion.identity, _landscape);
             _travelCaravan.name = "Journey Caravan";
             FitSprite(_travelCaravan, new Vector2(1.3f, 0.92f), 45);
@@ -128,7 +178,7 @@ namespace CaravanSecrets.Features.Journey
             renderer.sortingOrder = -30;
         }
 
-        private void CreateRoadPath(float fromY, float toY, string name, float bend)
+        private void CreateRoadPath(float fromY, float toY, string name, float bend, List<SpriteRenderer> collector)
         {
             if (_roadPrefab == null) return;
             var root = new GameObject(name).transform;
@@ -149,6 +199,8 @@ namespace CaravanSecrets.Features.Journey
                 var size = renderer.sprite.bounds.size;
                 item.transform.localScale = new Vector3(direction.magnitude * 1.12f / Mathf.Max(0.01f, size.x), RoadWidth / Mathf.Max(0.01f, size.y), 1);
                 renderer.sortingOrder = -1;
+                renderer.color = UntraveledTint;
+                collector.Add(renderer);
             }
         }
 
@@ -160,12 +212,20 @@ namespace CaravanSecrets.Features.Journey
             FitSprite(gate, new Vector2(1.65f, 1.82f), 12);
         }
 
-        private void CreateLandmark(float x, float y, float size, string name)
+        private void CreateLandmarks(JourneyChainSegment segment)
         {
-            if (_rockPrefab == null) return;
-            var rock = Instantiate(_rockPrefab, new Vector3(x, y, 0), Quaternion.Euler(0, 0, y * 7f), _landscape);
-            rock.name = name;
-            FitSprite(rock, Vector2.one * size, 3);
+            foreach (var landmark in segment.Landmarks)
+            {
+                var prefab = landmark.PrefabKey == "gate" ? _gatePrefab : landmark.PrefabKey == "cart" ? _cartPrefab : _rockPrefab;
+                if (prefab == null) continue;
+                var item = Instantiate(prefab, new Vector3(landmark.X, landmark.Y, 0),
+                    Quaternion.Euler(0, 0, landmark.RotationDegrees), _landscape);
+                item.name = $"Journey Landmark {landmark.PrefabKey} {landmark.Y:0.0}";
+                var size = landmark.PrefabKey == "gate"
+                    ? new Vector2(1.1f, 1.2f) * landmark.Scale
+                    : Vector2.one * landmark.Scale;
+                FitSprite(item, size, 3);
+            }
         }
 
         private static void FitSprite(GameObject item, Vector2 targetSize, int sortingOrder)

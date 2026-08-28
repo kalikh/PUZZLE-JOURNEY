@@ -1,0 +1,275 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b37260c0bfeeecd49a1756a8c3b50b4c, type: 3}
+  m_Name: DesertRoadJourney
+  m_EditorClassIdentifier: CaravanSecrets.Data::CaravanSecrets.Data.Journey.JourneyChainAsset
+  segments:
+  - SegmentId: desert_road_01
+    LevelId: desert_01
+    StartCheckpointId: desert_start
+    NextCheckpointId: desert_checkpoint_02
+    RoadBend: -1.05
+    Landmarks:
+    - PrefabKey: rock
+      X: -1.6
+      Y: -11.5
+      Scale: 0.52
+      RotationDegrees: -23
+    - PrefabKey: rock
+      X: 2.56
+      Y: -4.4
+      Scale: 0.84999996
+      RotationDegrees: 16
+    - PrefabKey: rock
+      X: -1.9200001
+      Y: 2.6999998
+      Scale: 0.74
+      RotationDegrees: 8
+    - PrefabKey: gate
+      X: 2.88
+      Y: 9.799999
+      Scale: 0.9
+      RotationDegrees: 0
+  - SegmentId: desert_road_02
+    LevelId: desert_02
+    StartCheckpointId: desert_checkpoint_02
+    NextCheckpointId: desert_checkpoint_03
+    RoadBend: 1.134
+    Landmarks:
+    - PrefabKey: rock
+      X: 2.24
+      Y: -11.05
+      Scale: 0.84999996
+      RotationDegrees: 21
+    - PrefabKey: rock
+      X: -1.6
+      Y: -3.95
+      Scale: 0.74
+      RotationDegrees: 13
+    - PrefabKey: rock
+      X: 2.56
+      Y: 3.1499999
+      Scale: 0.63
+      RotationDegrees: 5
+    - PrefabKey: gate
+      X: -1.9200001
+      Y: 10.25
+      Scale: 0.9
+      RotationDegrees: -3
+  - SegmentId: desert_road_03
+    LevelId: desert_03
+    StartCheckpointId: desert_checkpoint_03
+    NextCheckpointId: desert_checkpoint_04
+    RoadBend: -1.2179999
+    Landmarks:
+    - PrefabKey: rock
+      X: -2.88
+      Y: -10.6
+      Scale: 0.74
+      RotationDegrees: 18
+    - PrefabKey: rock
+      X: 2.24
+      Y: -3.5
+      Scale: 0.63
+      RotationDegrees: 10
+    - PrefabKey: rock
+      X: -1.6
+      Y: 3.6
+      Scale: 0.52
+      RotationDegrees: 2
+    - PrefabKey: gate
+      X: 2.56
+      Y: 10.7
+      Scale: 0.9
+      RotationDegrees: -6
+  - SegmentId: desert_road_04
+    LevelId: desert_04
+    StartCheckpointId: desert_checkpoint_04
+    NextCheckpointId: desert_checkpoint_05
+    RoadBend: 1.05
+    Landmarks:
+    - PrefabKey: rock
+      X: 1.9200001
+      Y: -11.5
+      Scale: 0.63
+      RotationDegrees: 15
+    - PrefabKey: rock
+      X: -2.88
+      Y: -4.4
+      Scale: 0.52
+      RotationDegrees: 7
+    - PrefabKey: rock
+      X: 2.24
+      Y: 2.6999998
+      Scale: 0.84999996
+      RotationDegrees: -1
+    - PrefabKey: gate
+      X: -1.6
+      Y: 9.799999
+      Scale: 0.9
+      RotationDegrees: -9
+  - SegmentId: desert_road_05
+    LevelId: desert_05
+    StartCheckpointId: desert_checkpoint_05
+    NextCheckpointId: desert_checkpoint_06
+    RoadBend: -1.134
+    Landmarks:
+    - PrefabKey: rock
+      X: -2.56
+      Y: -11.05
+      Scale: 0.52
+      RotationDegrees: 12
+    - PrefabKey: rock
+      X: 1.9200001
+      Y: -3.95
+      Scale: 0.84999996
+      RotationDegrees: 4
+    - PrefabKey: rock
+      X: -2.88
+      Y: 3.1499999
+      Scale: 0.74
+      RotationDegrees: -4
+    - PrefabKey: gate
+      X: 2.24
+      Y: 10.25
+      Scale: 0.9
+      RotationDegrees: -12
+  - SegmentId: desert_road_06
+    LevelId: desert_06
+    StartCheckpointId: desert_checkpoint_06
+    NextCheckpointId: desert_checkpoint_07
+    RoadBend: 1.2179999
+    Landmarks:
+    - PrefabKey: rock
+      X: 1.6
+      Y: -10.6
+      Scale: 0.84999996
+      RotationDegrees: 9
+    - PrefabKey: rock
+      X: -2.56
+      Y: -3.5
+      Scale: 0.74
+      RotationDegrees: 1
+    - PrefabKey: rock
+      X: 1.9200001
+      Y: 3.6
+      Scale: 0.63
+      RotationDegrees: -7
+    - PrefabKey: gate
+      X: -2.88
+      Y: 10.7
+      Scale: 0.9
+      RotationDegrees: -15
+  - SegmentId: desert_road_07
+    LevelId: desert_07
+    StartCheckpointId: desert_checkpoint_07
+    NextCheckpointId: desert_checkpoint_08
+    RoadBend: -1.05
+    Landmarks:
+    - PrefabKey: rock
+      X: -2.24
+      Y: -11.5
+      Scale: 0.74
+      RotationDegrees: 6
+    - PrefabKey: rock
+      X: 1.6
+      Y: -4.4
+      Scale: 0.63
+      RotationDegrees: -2
+    - PrefabKey: rock
+      X: -2.56
+      Y: 2.6999998
+      Scale: 0.52
+      RotationDegrees: -10
+    - PrefabKey: gate
+      X: 1.9200001
+      Y: 9.799999
+      Scale: 0.9
+      RotationDegrees: -18
+  - SegmentId: desert_road_08
+    LevelId: desert_08
+    StartCheckpointId: desert_checkpoint_08
+    NextCheckpointId: desert_checkpoint_09
+    RoadBend: 1.134
+    Landmarks:
+    - PrefabKey: rock
+      X: 2.88
+      Y: -11.05
+      Scale: 0.63
+      RotationDegrees: 3
+    - PrefabKey: rock
+      X: -2.24
+      Y: -3.95
+      Scale: 0.52
+      RotationDegrees: -5
+    - PrefabKey: rock
+      X: 1.6
+      Y: 3.1499999
+      Scale: 0.84999996
+      RotationDegrees: -13
+    - PrefabKey: gate
+      X: -2.56
+      Y: 10.25
+      Scale: 0.9
+      RotationDegrees: -21
+  - SegmentId: desert_road_09
+    LevelId: desert_09
+    StartCheckpointId: desert_checkpoint_09
+    NextCheckpointId: desert_checkpoint_10
+    RoadBend: -1.2179999
+    Landmarks:
+    - PrefabKey: rock
+      X: -1.9200001
+      Y: -10.6
+      Scale: 0.52
+      RotationDegrees: 0
+    - PrefabKey: rock
+      X: 2.88
+      Y: -3.5
+      Scale: 0.84999996
+      RotationDegrees: -8
+    - PrefabKey: rock
+      X: -2.24
+      Y: 3.6
+      Scale: 0.74
+      RotationDegrees: -16
+    - PrefabKey: gate
+      X: 1.6
+      Y: 10.7
+      Scale: 0.9
+      RotationDegrees: 23
+  - SegmentId: desert_road_10
+    LevelId: desert_10
+    StartCheckpointId: desert_checkpoint_10
+    NextCheckpointId: desert_checkpoint_11
+    RoadBend: 1.05
+    Landmarks:
+    - PrefabKey: rock
+      X: 2.56
+      Y: -11.5
+      Scale: 0.84999996
+      RotationDegrees: -3
+    - PrefabKey: rock
+      X: -1.9200001
+      Y: -4.4
+      Scale: 0.74
+      RotationDegrees: -11
+    - PrefabKey: rock
+      X: 2.88
+      Y: 2.6999998
+      Scale: 0.63
+      RotationDegrees: -19
+    - PrefabKey: gate
+      X: -2.24
+      Y: 9.799999
+      Scale: 0.9
+      RotationDegrees: 20

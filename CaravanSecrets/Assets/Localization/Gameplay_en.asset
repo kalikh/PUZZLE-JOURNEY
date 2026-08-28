@@ -163,6 +163,10 @@ MonoBehaviour:
     m_Localized: Next checkpoint reached
     m_Metadata:
       m_Items: []
+  - m_Id: 8325086302969856
+    m_Localized: "Checkpoint {0}/{1} \u2014 the caravan presses on"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

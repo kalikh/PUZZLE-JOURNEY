@@ -6,6 +6,11 @@ namespace CaravanSecrets.Features.Gameplay
 {
     public sealed class GameplayFeedback : MonoBehaviour
     {
+        private static readonly Color DustSand = new(0.82f, 0.62f, 0.30f, 0.65f);
+        private static readonly Color GateGlow = new(0.30f, 0.95f, 0.88f, 0.8f);
+        private static readonly Color SwitchGlow = new(0.35f, 0.95f, 0.45f, 0.8f);
+        private static readonly Color CompletionGold = new(0.98f, 0.82f, 0.30f, 0.9f);
+
         [SerializeField] private AudioClip selectionSound;
         [SerializeField] private AudioClip moveSound;
         [SerializeField] private AudioClip invalidSound;
@@ -21,11 +26,27 @@ namespace CaravanSecrets.Features.Gameplay
         }
 
         public void PlaySelection(Transform target) { Play(selectionSound); StartCoroutine(Pulse(target, 1.08f, 0.12f)); }
-        public void PlayMove(Vector3 position) { Play(moveSound); _dust.transform.position = position; _dust.Emit(7); }
+        public void PlayMove(Vector3 position) { Play(moveSound); EmitDust(position, DustSand, 7); }
         public void PlayInvalid(Transform target) { Play(invalidSound); StartCoroutine(Shake(target)); }
+        public void PlaySwitchActivated(Transform target) { StartCoroutine(Pulse(target, 1.22f, 0.28f)); EmitDust(target.position, SwitchGlow, 10); }
+        public void PlayGateOpen(Transform target) { StartCoroutine(Pulse(target, 1.18f, 0.3f)); EmitDust(target.position, GateGlow, 10); }
         public void PlayCompletion(IEnumerable<SpriteRenderer> gates)
-        { Play(completionSound); foreach (var gate in gates) if (gate != null) StartCoroutine(Pulse(gate.transform, 1.14f, 0.4f)); }
+        {
+            Play(completionSound);
+            foreach (var gate in gates)
+                if (gate != null)
+                {
+                    StartCoroutine(Pulse(gate.transform, 1.14f, 0.4f));
+                    EmitDust(gate.transform.position, CompletionGold, 14);
+                }
+        }
         private void Play(AudioClip clip) { if (clip != null) _audioSource.PlayOneShot(clip); }
+
+        private void EmitDust(Vector3 position, Color color, int count)
+        {
+            var parameters = new ParticleSystem.EmitParams { position = position, startColor = color };
+            _dust.Emit(parameters, count);
+        }
 
         private IEnumerator Pulse(Transform target, float amount, float duration)
         {
@@ -48,7 +69,8 @@ namespace CaravanSecrets.Features.Gameplay
             var item = new GameObject("Cart Dust", typeof(ParticleSystem)); item.transform.SetParent(transform, false);
             _dust = item.GetComponent<ParticleSystem>();
             var main = _dust.main; main.loop = false; main.playOnAwake = false; main.startLifetime = 0.45f; main.startSpeed = 0.5f;
-            main.startSize = 0.11f; main.startColor = new Color(0.82f, 0.62f, 0.30f, 0.65f); main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startSize = 0.11f; main.startColor = DustSand; main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 128;
             var emission = _dust.emission; emission.enabled = false;
             var shape = _dust.shape; shape.shapeType = ParticleSystemShapeType.Circle; shape.radius = 0.18f;
             var renderer = item.GetComponent<ParticleSystemRenderer>(); renderer.sortingOrder = 40;

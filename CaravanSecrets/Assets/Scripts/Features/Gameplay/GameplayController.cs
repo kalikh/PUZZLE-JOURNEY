@@ -3,6 +3,7 @@ using System.Collections;
 using System;
 using System.Linq;
 using CaravanSecrets.Core.Bootstrap;
+using CaravanSecrets.Data.Journey;
 using CaravanSecrets.Data.Levels;
 using CaravanSecrets.Data.Save;
 using CaravanSecrets.Game.Board;
@@ -60,6 +61,7 @@ namespace CaravanSecrets.Features.Gameplay
         private bool _nextLevelLoaded;
         private bool _applicationPaused;
         private float _lastCameraAspect;
+        private JourneyChain _journeyChain;
 
         private static readonly Color Sand = new(0.86f, 0.70f, 0.42f);
         private static readonly Color SandDark = new(0.66f, 0.47f, 0.24f);
@@ -100,21 +102,25 @@ namespace CaravanSecrets.Features.Gameplay
             }
 #endif
             Debug.Log($"CARAVAN_LEVELS_LOADED count={_levels.Count}");
+            var chainAsset = Resources.Load<JourneyChainAsset>("Journey/DesertRoadJourney");
+            if (chainAsset != null) _journeyChain = chainAsset.ToChain();
+            else Debug.LogWarning("Journey chain asset 'Journey/DesertRoadJourney' is missing; journey presentation is disabled.");
             var bootstrap = FindFirstObjectByType<GameBootstrap>();
             _saveService = bootstrap?.Services?.Resolve<ISaveService>();
             _saveData = _saveService?.Load() ?? new PlayerSaveData();
             var initialIndex = FindSavedLevelIndex(_saveData.CurrentLevelId);
             LoadLevel(initialIndex);
             CreateHud();
-            if (initialIndex == 0 && _levels.Count > 1 && _levels[0].Id == "desert_01")
+            if (TryGetChainSegment(initialIndex, out var initialSegment))
             {
                 _journeyPresenter = gameObject.AddComponent<RepresentativeJourneyPresenter>();
                 var restoredPhase = ParseJourneyPhase(_saveData.JourneyPhase);
-                _journeyPresenter.Initialize(_camera, _camera.orthographicSize, _saveData.JourneyCheckpointId, restoredPhase);
+                _journeyPresenter.Initialize(_camera, _camera.orthographicSize, initialSegment,
+                    _saveData.JourneyCheckpointId, restoredPhase);
                 if (_journeyPresenter.Session.Phase == JourneyPhase.AtStartCheckpoint)
-                    StartCoroutine(BeginRepresentativeJourney());
+                    StartCoroutine(BeginJourneyApproach());
                 else if (_saveData.JourneyPuzzleCompleted)
-                    StartCoroutine(ResumeCompletedRepresentativeJourney());
+                    StartCoroutine(ResumeCompletedJourney());
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             _levelBrowser = gameObject.AddComponent<DevelopmentLevelBrowser>();
@@ -179,7 +185,17 @@ namespace CaravanSecrets.Features.Gameplay
             _isPaused = false;
             Time.timeScale = 1;
             _levelBrowser?.Hide();
+            // Development shortcut: cancel any in-flight journey transition so the
+            // browser-selected level becomes the single source of truth.
+            StopAllCoroutines();
+            _isAnimating = false;
+            _journeyTransitioning = false;
+            _journeyDepartureStarted = false;
+            _nextLevelLoaded = false;
             LoadLevel(index);
+            if (_journeyPresenter == null) return;
+            if (TryGetChainSegment(index, out var segment)) _journeyPresenter.BindSegment(segment, false);
+            else _journeyPresenter.HideLandscape();
         }
 
         private void ToggleLanguageFromBrowser()
@@ -214,10 +230,11 @@ namespace CaravanSecrets.Features.Gameplay
         private void RestartFromHud()
         {
             if (_journeyTransitioning || _isAnimating) return;
-            if (_levelIndex == 0 && _saveData != null && _saveData.JourneyPuzzleCompleted)
+            if (_saveData != null && _saveData.JourneyPuzzleCompleted &&
+                TryGetChainSegment(_levelIndex, out var restartSegment))
             {
                 _saveData.JourneyPuzzleCompleted = false;
-                SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+                SaveJourneyStable(JourneyPhase.AtPuzzle, restartSegment.StartCheckpointId, restartSegment.LevelId);
             }
             LoadLevel(_levelIndex);
         }
@@ -226,11 +243,10 @@ namespace CaravanSecrets.Features.Gameplay
         {
             if (_game.State.IsComplete)
             {
-                if (_levelIndex == 0 && _journeyPresenter != null &&
-                    _journeyPresenter.Session.Phase == JourneyPhase.AtPuzzle)
+                if (IsJourneyPuzzleActive())
                 {
-                    RecordRepresentativeCompletion();
-                    if (!_journeyDepartureStarted) StartCoroutine(CompleteRepresentativeJourney());
+                    RecordJourneyCompletion();
+                    if (!_journeyDepartureStarted) StartCoroutine(CompleteJourneySegment());
                     return;
                 }
                 LoadLevel((_levelIndex + 1) % _levels.Count);
@@ -239,6 +255,18 @@ namespace CaravanSecrets.Features.Gameplay
             var hintIndex = Mathf.Clamp(_levelIndex, 0, 4);
             _message = GameplayStrings.Get($"hint.{hintIndex + 1}");
             RenderHud();
+        }
+
+        private bool IsJourneyPuzzleActive() =>
+            _journeyPresenter != null && _journeyChain != null &&
+            _journeyPresenter.Session.Phase == JourneyPhase.AtPuzzle &&
+            _journeyPresenter.LevelId == _levels[_levelIndex].Id;
+
+        private bool TryGetChainSegment(int levelIndex, out JourneyChainSegment segment)
+        {
+            segment = null;
+            return _journeyChain != null && levelIndex >= 0 && levelIndex < _levels.Count &&
+                   _journeyChain.TryFindByLevelId(_levels[levelIndex].Id, out segment);
         }
 
         private void BuildBoard()
@@ -255,6 +283,7 @@ namespace CaravanSecrets.Features.Gameplay
             _switchActivatedVisual = false;
 
             var state = _game.State;
+            CreateBoardFloor(state);
             CreateRoadStrip(state);
             for (var y = 0; y < state.Height; y++)
             for (var x = 0; x < state.Width; x++)
@@ -310,6 +339,21 @@ namespace CaravanSecrets.Features.Gameplay
             FitBackground();
         }
 
+        private void CreateBoardFloor(BoardState state)
+        {
+            if (_roadPrefab == null) return;
+            for (var y = 0; y < state.Height; y++)
+            for (var x = 0; x < state.Width; x++)
+            {
+                var position = new GridPosition(x, y);
+                var tint = (x + y) % 2 == 0 ? new Color(1f, 0.97f, 0.90f) : new Color(0.93f, 0.89f, 0.80f);
+                var tile = CreateArtVisual(_roadPrefab, $"Road Cell {x},{y}", position,
+                    new Vector2(CellSize * 0.995f, CellSize * 0.995f), -6, tint);
+                var renderer = tile.GetComponent<SpriteRenderer>();
+                if (renderer != null) renderer.color = tint;
+            }
+        }
+
         private void CreateRoadStrip(BoardState state)
         {
             if (_roadStripPrefab == null) return;
@@ -354,7 +398,18 @@ namespace CaravanSecrets.Features.Gameplay
             item.transform.position = (start + end) * 0.5f;
             var direction = end - start;
             item.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+            if (renderer != null) renderer.color = new Color(1f, 0.93f, 0.78f);
             _visuals.Add(item);
+        }
+
+        private void AddInteractableHalo(SpriteRenderer body, float worldDiameter)
+        {
+            var parentScale = body.transform.localScale;
+            var local = new Vector3(
+                worldDiameter / Mathf.Max(0.01f, parentScale.x),
+                worldDiameter / Mathf.Max(0.01f, parentScale.y), 1);
+            AddChild(body.transform, "Selection Halo", _circleSprite, new Color(0.97f, 0.80f, 0.32f, 0.38f),
+                new Vector3(0, 0, 0.12f), local, 26);
         }
 
         private SpriteRenderer CreateCart(CartState cart)
@@ -362,6 +417,7 @@ namespace CaravanSecrets.Features.Gameplay
             var bodyObject = CreateArtVisual(_cartPrefab, cart.Id, cart.Position, new Vector2(CellSize * 0.86f, CellSize * 0.68f), 30, CartGold);
             var body = bodyObject.GetComponent<SpriteRenderer>();
             body.transform.rotation = Quaternion.Euler(0, 0, Rotation(cart.Direction));
+            AddInteractableHalo(body, CellSize * 1.08f);
             AddChild(body.transform, "Direction Arrow", _arrowSprite, Color.white, new Vector3(0.15f, 0.02f, -0.1f), new Vector3(0.38f, 0.52f, 1), 35);
             AddMatchMarker(body.transform, cart.Id, new Vector3(-0.18f, -0.17f, -0.12f), 38);
             return body;
@@ -373,6 +429,7 @@ namespace CaravanSecrets.Features.Gameplay
                 new Vector2(CellSize * 0.68f, CellSize * 0.54f), 31, CargoColor(cargo.Type));
             var body = bodyObject.GetComponent<SpriteRenderer>();
             body.transform.rotation = Quaternion.Euler(0, 0, Rotation(cargo.Direction));
+            AddInteractableHalo(body, CellSize * 0.9f);
             AddChild(body.transform, "Direction Arrow", _arrowSprite, Color.white,
                 new Vector3(0.13f, 0.02f, -0.1f), new Vector3(0.32f, 0.45f, 1), 35);
             AddCargoSymbol(body.transform, cargo.Type, 39);
@@ -606,6 +663,7 @@ namespace CaravanSecrets.Features.Gameplay
             if (cart == null) { MoveSelectedCargo(); return; }
             if (cart.HasExited) return;
             var selectedRenderer = _cartRenderers[cart.Id];
+            var openBefore = CaptureOpenLinkedGates();
             var result = _game.Move(cart.Id);
             _message = result == MoveResult.Success ? string.Empty : result switch
             {
@@ -621,13 +679,14 @@ namespace CaravanSecrets.Features.Gameplay
             }
             else if (result != MoveResult.Success) _feedback.PlayInvalid(selectedRenderer.transform);
             RefreshBarriers();
+            NotifyNewlyOpenedLinkedGates(openBefore);
             foreach (var gate in _gateByPosition)
                 gate.Value.gameObject.SetActive(_game.State.GetCell(gate.Key) == CellType.Exit);
             if (_game.State.IsComplete)
             {
                 _message = GameplayStrings.Get("status.complete");
                 _feedback.PlayCompletion(_gateRenderers);
-                RecordRepresentativeCompletion();
+                RecordJourneyCompletion();
             }
             if (cart.HasExited) _selectedObjectId = null;
             RenderHud();
@@ -638,6 +697,7 @@ namespace CaravanSecrets.Features.Gameplay
             var cargo = _game.State.GetCargo(_selectedObjectId);
             if (cargo == null || cargo.IsDelivered) return;
             var selectedRenderer = _cargoRenderers[cargo.Id];
+            var openBefore = CaptureOpenLinkedGates();
             var result = _game.MoveCargo(cargo.Id);
             _message = result switch
             {
@@ -654,11 +714,12 @@ namespace CaravanSecrets.Features.Gameplay
             }
             else _feedback.PlayInvalid(selectedRenderer.transform);
             RefreshBarriers();
+            NotifyNewlyOpenedLinkedGates(openBefore);
             if (_game.State.IsComplete)
             {
                 _message = GameplayStrings.Get("status.complete");
                 _feedback.PlayCompletion(_gateRenderers);
-                RecordRepresentativeCompletion();
+                RecordJourneyCompletion();
             }
             if (cargo.IsDelivered) _selectedObjectId = null;
             RenderHud();
@@ -691,23 +752,28 @@ namespace CaravanSecrets.Features.Gameplay
             _isAnimating = false;
         }
 
-        private IEnumerator BeginRepresentativeJourney()
+        private IEnumerator BeginJourneyApproach()
         {
             _journeyTransitioning = true;
             _message = GameplayStrings.Get("status.journey_to_puzzle");
             RenderHud();
             yield return _journeyPresenter.PlayApproach();
-            SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+            var segment = _journeyPresenter.Segment;
+            SaveJourneyStable(JourneyPhase.AtPuzzle, segment.StartCheckpointId, segment.LevelId);
             _message = string.Empty;
             _journeyTransitioning = false;
             RenderHud();
         }
 
-        private IEnumerator CompleteRepresentativeJourney()
+        private IEnumerator CompleteJourneySegment()
         {
             if (_journeyDepartureStarted) yield break;
             _journeyDepartureStarted = true;
             _journeyTransitioning = true;
+            var segment = _journeyPresenter.Segment;
+            var segmentIndex = _journeyChain != null ? _journeyChain.IndexOfLevel(segment.LevelId) : -1;
+            var nextIndex = Mathf.Min(_levelIndex + 1, _levels.Count - 1);
+            var nextLevelId = _levels[nextIndex].Id;
             _message = GameplayStrings.Get("status.journey_to_checkpoint");
             RenderHud();
             var departure = _journeyPresenter.PlayDeparture();
@@ -718,8 +784,10 @@ namespace CaravanSecrets.Features.Gameplay
                 {
                     arrivalSaved = true;
                     _saveData.JourneyPuzzleCompleted = false;
-                    SaveJourneyStable(JourneyPhase.AtNextCheckpoint, "desert_checkpoint_02", "desert_02");
-                    _message = GameplayStrings.Get("status.checkpoint_reached");
+                    SaveJourneyStable(JourneyPhase.AtNextCheckpoint, segment.NextCheckpointId, nextLevelId);
+                    _message = segmentIndex >= 0
+                        ? GameplayStrings.Get("status.journey_progress", segmentIndex + 1, _journeyChain.Count)
+                        : GameplayStrings.Get("status.checkpoint_reached");
                     RenderHud();
                 }
                 yield return departure.Current;
@@ -727,21 +795,28 @@ namespace CaravanSecrets.Features.Gameplay
             if (!arrivalSaved)
             {
                 _saveData.JourneyPuzzleCompleted = false;
-                SaveJourneyStable(JourneyPhase.AtNextCheckpoint, "desert_checkpoint_02", "desert_02");
+                SaveJourneyStable(JourneyPhase.AtNextCheckpoint, segment.NextCheckpointId, nextLevelId);
             }
             _journeyPresenter.HideLandscape();
             _journeyTransitioning = false;
             if (!_nextLevelLoaded)
             {
                 _nextLevelLoaded = true;
-                LoadLevel(1);
+                LoadLevel(nextIndex);
+            }
+            if (TryGetChainSegment(nextIndex, out var nextSegment))
+            {
+                _journeyDepartureStarted = false;
+                _nextLevelLoaded = false;
+                _journeyPresenter.BindSegment(nextSegment, true);
+                StartCoroutine(BeginJourneyApproach());
             }
         }
 
-        private IEnumerator ResumeCompletedRepresentativeJourney()
+        private IEnumerator ResumeCompletedJourney()
         {
             yield return null;
-            if (!_journeyDepartureStarted) yield return CompleteRepresentativeJourney();
+            if (!_journeyDepartureStarted) yield return CompleteJourneySegment();
         }
 
         private void OnApplicationPause(bool paused)
@@ -750,11 +825,13 @@ namespace CaravanSecrets.Features.Gameplay
             _journeyPresenter?.SetSuspended(paused || _isPaused);
         }
 
-        private void RecordRepresentativeCompletion()
+        private void RecordJourneyCompletion()
         {
-            if (_levelIndex != 0 || _saveData == null || _saveData.JourneyPuzzleCompleted) return;
+            if (_saveData == null || _saveData.JourneyPuzzleCompleted) return;
+            if (_journeyPresenter == null || _journeyPresenter.LevelId != _levels[_levelIndex].Id) return;
+            var segment = _journeyPresenter.Segment;
             _saveData.JourneyPuzzleCompleted = true;
-            SaveJourneyStable(JourneyPhase.AtPuzzle, "desert_start", "desert_01");
+            SaveJourneyStable(JourneyPhase.AtPuzzle, segment.StartCheckpointId, segment.LevelId);
         }
 
         private void SaveJourneyStable(JourneyPhase phase, string checkpointId, string levelId)
@@ -808,22 +885,23 @@ namespace CaravanSecrets.Features.Gameplay
             if (_game.State.BarriersOpen && !_switchActivatedVisual)
             {
                 _switchActivatedVisual = true;
-                foreach (var renderer in _switchRenderers) StartCoroutine(AnimateSwitchActivation(renderer.transform));
+                foreach (var renderer in _switchRenderers) _feedback.PlaySwitchActivated(renderer.transform);
             }
         }
 
-        private static IEnumerator AnimateSwitchActivation(Transform target)
+        private HashSet<GridPosition> CaptureOpenLinkedGates()
         {
-            if (target == null) yield break;
-            var original = target.localScale;
-            const float duration = 0.28f;
-            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
-            {
-                var pulse = 1f + Mathf.Sin(elapsed / duration * Mathf.PI) * 0.18f;
-                target.localScale = original * pulse;
-                yield return null;
-            }
-            target.localScale = original;
+            var open = new HashSet<GridPosition>();
+            foreach (var gate in _linkedGateByPosition)
+                if (_game.State.IsGateOpen(gate.Key)) open.Add(gate.Key);
+            return open;
+        }
+
+        private void NotifyNewlyOpenedLinkedGates(HashSet<GridPosition> before)
+        {
+            foreach (var gate in _linkedGateByPosition)
+                if (!before.Contains(gate.Key) && _game.State.IsGateOpen(gate.Key))
+                    _feedback.PlayGateOpen(gate.Value.transform);
         }
 
         private bool TryGetPointerDown(out Vector2 position)

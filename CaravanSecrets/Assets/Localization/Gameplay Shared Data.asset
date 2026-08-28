@@ -159,6 +159,10 @@ MonoBehaviour:
     m_Key: status.checkpoint_reached
     m_Metadata:
       m_Items: []
+  - m_Id: 8325086302969856
+    m_Key: status.journey_progress
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
